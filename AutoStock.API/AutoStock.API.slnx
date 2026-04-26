@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="../AutoStock.Application/AutoStock.Application.csproj" />
+  <Project Path="../AutoStock.Domain/AutoStock.Domain.csproj" />
+  <Project Path="../AutoStock.Infrastructure/AutoStock.Infrastructure.csproj" />
+  <Project Path="AutoStock.API.csproj" />
+</Solution>
