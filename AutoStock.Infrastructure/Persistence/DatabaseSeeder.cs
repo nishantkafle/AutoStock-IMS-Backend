@@ -31,7 +31,10 @@ public static class DatabaseSeeder
             if (result.Succeeded)
                 await userManager.AddToRoleAsync(admin, "Admin");
         }
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
         const string staffEmail = "staff@test.com";
         if (await userManager.FindByEmailAsync(staffEmail) == null)
         {
@@ -45,7 +48,13 @@ public static class DatabaseSeeder
 
             var result = await userManager.CreateAsync(staff, "staff123");
             if (result.Succeeded)
+<<<<<<< Updated upstream
                 await userManager.AddToRoleAsync(staff, "Staff"); 
         }
+=======
+                await userManager.AddToRoleAsync(staff, "Staff");
+        }
+
+>>>>>>> Stashed changes
     }
 }
