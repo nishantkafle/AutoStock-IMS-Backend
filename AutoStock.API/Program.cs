@@ -68,6 +68,10 @@ builder.Services.AddScoped<GlobalExceptionHandler>();
 builder.Services.AddScoped<IPartService, PartService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 
+builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+builder.Services.AddScoped<IPartRequestService, PartRequestService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
+
 // Memory cache
 builder.Services.AddMemoryCache();
 
