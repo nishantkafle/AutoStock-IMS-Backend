@@ -10,4 +10,6 @@ public interface ICustomerService
     //  Staff views customer details and vehicle info
     Task<ApiResponse<CustomerResponseDto>> GetCustomerByIdAsync(string id);
     Task<ApiResponse<List<CustomerResponseDto>>> GetAllCustomersAsync();
+    // Staff searches customers by name, phone, ID, or vehicle number
+    Task<ApiResponse<List<CustomerResponseDto>>> SearchCustomersAsync(string keyword);
 }
