@@ -71,7 +71,7 @@ builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IPartRequestService, PartRequestService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
-
+builder.Services.AddScoped<IVendorService, VendorService>();
 // Memory cache
 builder.Services.AddMemoryCache();
 
