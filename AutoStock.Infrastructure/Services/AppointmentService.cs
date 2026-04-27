@@ -30,12 +30,13 @@ public class AppointmentService(
     public async Task<ApiResponse<AppointmentResponseDto>> BookAppointmentAsync(
         string customerId, AppointmentRequestDto dto)
     {
+        
         var appointment = new Appointment
         {
             CustomerId = customerId,
             VehicleId = dto.VehicleId,
             ServiceType = dto.ServiceType,
-            AppointmentDate = dto.AppointmentDate,
+            AppointmentDate = DateTime.SpecifyKind(dto.AppointmentDate, DateTimeKind.Utc), 
             Notes = dto.Notes,
             Status = "Pending"
         };
