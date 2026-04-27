@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace AutoStock.Infrastructure.Middleware;
 
-// Catches all unhandled exceptions and returns clean JSON - Lecture 24
+// Catches all unhandled exceptions and returns clean JSON 
 public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IMiddleware
 {
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)

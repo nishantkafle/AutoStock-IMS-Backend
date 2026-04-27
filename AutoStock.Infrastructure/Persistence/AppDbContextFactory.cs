@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace AutoStock.Infrastructure.Persistence;
 
-// This helps EF Core create DbContext during migration without running the full app
+// This helps EF Core create DbContext during migration 
 public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
 {
     public AppDbContext CreateDbContext(string[] args)
