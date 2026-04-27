@@ -100,6 +100,49 @@ public class CustomerService : ICustomerService
 
         return ApiResponse<List<CustomerResponseDto>>.Ok(result);
     }
+    //  Staff searches customers by name, phone, ID, or vehicle number
+    public async Task<ApiResponse<List<CustomerResponseDto>>> SearchCustomersAsync(string keyword)
+    {
+        if (string.IsNullOrWhiteSpace(keyword))
+            return ApiResponse<List<CustomerResponseDto>>.Fail("Search keyword cannot be empty");
+
+        keyword = keyword.ToLower();
+
+        // Get all customers
+        var customers = await _userManager.GetUsersInRoleAsync("Customer");
+
+        // Filter by name, phone, or ID
+        var filtered = customers.Where(c =>
+            c.FullName.ToLower().Contains(keyword) ||
+            (c.PhoneNumber != null && c.PhoneNumber.Contains(keyword)) ||
+            c.Id.ToLower().Contains(keyword)
+        ).ToList();
+
+        // Also search by vehicle number
+        var vehicleMatches = await _db.Vehicles
+            .Where(v => v.VehicleNumber.ToLower().Contains(keyword))
+            .Select(v => v.CustomerId)
+            .ToListAsync();
+
+        // Add customers found by vehicle number
+        foreach (var customerId in vehicleMatches)
+        {
+            var customer = customers.FirstOrDefault(c => c.Id == customerId);
+            if (customer != null && !filtered.Any(f => f.Id == customer.Id))
+                filtered.Add(customer);
+        }
+
+        var result = new List<CustomerResponseDto>();
+        foreach (var customer in filtered)
+        {
+            var vehicles = await _db.Vehicles
+                .Where(v => v.CustomerId == customer.Id)
+                .ToListAsync();
+            result.Add(MapToResponseDto(customer, vehicles));
+        }
+
+        return ApiResponse<List<CustomerResponseDto>>.Ok(result);
+    }
 
     // Helper method to map User + Vehicles to response DTO
     private static CustomerResponseDto MapToResponseDto(User user, List<Vehicle> vehicles)
