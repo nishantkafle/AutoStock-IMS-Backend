@@ -30,6 +30,7 @@ public static class DatabaseSeeder
                 await userManager.AddToRoleAsync(admin, "Admin");
         }
 
+        // Default staff
         const string staffEmail = "staff@test.com";
         if (await userManager.FindByEmailAsync(staffEmail) == null)
         {
