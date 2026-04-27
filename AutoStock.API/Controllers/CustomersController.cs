@@ -43,4 +43,12 @@ public class CustomersController : ControllerBase
         var result = await _customerService.GetCustomerByIdAsync(id);
         return result.Success ? Ok(result) : NotFound(result);
     }
+    //  Staff searches customers by name, phone, ID, or vehicle number
+    // GET api/customers/search?keyword=xyz
+    [HttpGet("search")]
+    public async Task<IActionResult> SearchCustomers([FromQuery] string keyword)
+    {
+        var result = await _customerService.SearchCustomersAsync(keyword);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
 }
