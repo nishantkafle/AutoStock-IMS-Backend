@@ -66,6 +66,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<GlobalExceptionHandler>();
 builder.Services.AddScoped<IPartService, PartService>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
 
 // Memory cache
 builder.Services.AddMemoryCache();
@@ -111,5 +112,6 @@ app.UseCors("AllowReact");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
 
 app.Run();

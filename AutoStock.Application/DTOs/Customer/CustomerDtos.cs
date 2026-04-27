@@ -17,7 +17,6 @@ public class CustomerRegisterDto
     [Required]
     public string PhoneNumber { get; set; } = string.Empty;
 
-    // Vehicle details
     [Required]
     public string VehicleNumber { get; set; } = string.Empty;
 
@@ -28,7 +27,6 @@ public class CustomerRegisterDto
     public string Model { get; set; } = string.Empty;
 
     public int Year { get; set; }
-    public int Mileage { get; set; }
 }
 
 // Returned when viewing customer details 
@@ -51,7 +49,6 @@ public class CustomerVehicleDto
     public string Make { get; set; } = string.Empty;
     public string Model { get; set; } = string.Empty;
     public int Year { get; set; }
-    public int Mileage { get; set; }
     public DateTime? LastServiceDate { get; set; }
 }
 
