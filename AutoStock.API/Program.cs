@@ -74,6 +74,7 @@ builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IVendorService, VendorService>();
 builder.Services.AddScoped<IStaffService, StaffService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
 // Memory cache
 builder.Services.AddMemoryCache();
 

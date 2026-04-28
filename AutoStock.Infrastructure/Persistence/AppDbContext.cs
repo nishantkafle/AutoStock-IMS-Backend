@@ -1,4 +1,4 @@
-﻿using AutoStock.Domain.Entities;
+using AutoStock.Domain.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +12,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<PartRequest> PartRequests => Set<PartRequest>();
     public DbSet<Review> Reviews => Set<Review>();
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -61,5 +63,26 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .WithMany()
             .HasForeignKey(r => r.CustomerId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Invoice belongs to Staff
+        builder.Entity<Invoice>()
+            .HasOne(i => i.Staff)
+            .WithMany()
+            .HasForeignKey(i => i.StaffId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // InvoiceItem belongs to Invoice
+        builder.Entity<InvoiceItem>()
+            .HasOne(i => i.Invoice)
+            .WithMany(inv => inv.Items)
+            .HasForeignKey(i => i.InvoiceId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // InvoiceItem has one Part
+        builder.Entity<InvoiceItem>()
+            .HasOne(i => i.Part)
+            .WithMany()
+            .HasForeignKey(i => i.PartId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
