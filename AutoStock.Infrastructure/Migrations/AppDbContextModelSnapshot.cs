@@ -62,6 +62,7 @@ namespace AutoStock.Infrastructure.Migrations
                     b.ToTable("Appointments");
                 });
 
+<<<<<<< HEAD
             modelBuilder.Entity("AutoStock.Domain.Entities.Invoice", b =>
                 {
                     b.Property<Guid>("Id")
@@ -137,6 +138,8 @@ namespace AutoStock.Infrastructure.Migrations
                     b.ToTable("InvoiceItems");
                 });
 
+=======
+>>>>>>> 4ccc783d67c419876d0e51800eaede2341d19371
             modelBuilder.Entity("AutoStock.Domain.Entities.Part", b =>
                 {
                     b.Property<Guid>("Id")
@@ -557,6 +560,7 @@ namespace AutoStock.Infrastructure.Migrations
                     b.Navigation("Vehicle");
                 });
 
+<<<<<<< HEAD
             modelBuilder.Entity("AutoStock.Domain.Entities.Invoice", b =>
                 {
                     b.HasOne("AutoStock.Domain.Entities.User", "Staff")
@@ -587,6 +591,8 @@ namespace AutoStock.Infrastructure.Migrations
                     b.Navigation("Part");
                 });
 
+=======
+>>>>>>> 4ccc783d67c419876d0e51800eaede2341d19371
             modelBuilder.Entity("AutoStock.Domain.Entities.Part", b =>
                 {
                     b.HasOne("AutoStock.Domain.Entities.Vendor", "Vendor")
