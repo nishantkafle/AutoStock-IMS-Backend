@@ -12,11 +12,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<PartRequest> PartRequests => Set<PartRequest>();
     public DbSet<Review> Reviews => Set<Review>();
-<<<<<<< HEAD
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
-=======
->>>>>>> 4ccc783d67c419876d0e51800eaede2341d19371
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -66,7 +63,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .WithMany()
             .HasForeignKey(r => r.CustomerId)
             .OnDelete(DeleteBehavior.Cascade);
-<<<<<<< HEAD
 
         // Invoice belongs to Staff
         builder.Entity<Invoice>()
@@ -88,7 +84,5 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .WithMany()
             .HasForeignKey(i => i.PartId)
             .OnDelete(DeleteBehavior.Restrict);
-=======
->>>>>>> 4ccc783d67c419876d0e51800eaede2341d19371
     }
 }
