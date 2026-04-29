@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Identity;
 
 namespace AutoStock.Infrastructure.Persistence;
 
-// Creates default roles and one admin account on first startup - Lecture 22
 public static class DatabaseSeeder
 {
     public static async Task SeedAsync(UserManager<User> userManager, RoleManager<IdentityRole> roleManager)
@@ -15,7 +14,6 @@ public static class DatabaseSeeder
                 await roleManager.CreateAsync(new IdentityRole(role));
         }
 
-        // Default admin - change this password before submitting coursework
         const string adminEmail = "admin@autostock.com";
         if (await userManager.FindByEmailAsync(adminEmail) == null)
         {
@@ -30,6 +28,23 @@ public static class DatabaseSeeder
             var result = await userManager.CreateAsync(admin, "Admin@123");
             if (result.Succeeded)
                 await userManager.AddToRoleAsync(admin, "Admin");
+        }
+
+        // Default staff
+        const string staffEmail = "staff@test.com";
+        if (await userManager.FindByEmailAsync(staffEmail) == null)
+        {
+            var staff = new User
+            {
+                FullName = "Test Staff",
+                UserName = staffEmail,
+                Email = staffEmail,
+                EmailConfirmed = true
+            };
+
+            var result = await userManager.CreateAsync(staff, "staff123");
+            if (result.Succeeded)
+                await userManager.AddToRoleAsync(staff, "Staff");
         }
     }
 }
