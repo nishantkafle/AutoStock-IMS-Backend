@@ -166,4 +166,42 @@ public class CustomerService : ICustomerService
             }).ToList()
         };
     }
+    //  Regular customers : registered more than 3 months ago
+    public async Task<ApiResponse<List<CustomerReportDto>>> GetRegularCustomersAsync()
+    {
+        var threeMonthsAgo = DateTime.UtcNow.AddMonths(-3);
+        var customers = await _userManager.GetUsersInRoleAsync("Customer");
+
+        var regulars = customers
+            .Where(c => c.CreatedAt <= threeMonthsAgo)
+            .Select(c => new CustomerReportDto
+            {
+                Id = c.Id,
+                FullName = c.FullName,
+                Email = c.Email ?? string.Empty,
+                PhoneNumber = c.PhoneNumber ?? string.Empty,
+                CreatedAt = c.CreatedAt
+            }).ToList();
+
+        return ApiResponse<List<CustomerReportDto>>.Ok(regulars);
+    }
+
+    //  Pending credits : customers with unpaid balance
+    public async Task<ApiResponse<List<CustomerReportDto>>> GetPendingCreditsAsync()
+    {
+        var customers = await _userManager.GetUsersInRoleAsync("Customer");
+
+        var pending = customers
+            .Where(c => c.HasPendingCredit)
+            .Select(c => new CustomerReportDto
+            {
+                Id = c.Id,
+                FullName = c.FullName,
+                Email = c.Email ?? string.Empty,
+                PhoneNumber = c.PhoneNumber ?? string.Empty,
+                CreatedAt = c.CreatedAt
+            }).ToList();
+
+        return ApiResponse<List<CustomerReportDto>>.Ok(pending);
+    }
 }

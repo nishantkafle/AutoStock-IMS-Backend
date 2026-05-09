@@ -51,4 +51,21 @@ public class CustomersController : ControllerBase
         var result = await _customerService.SearchCustomersAsync(keyword);
         return result.Success ? Ok(result) : BadRequest(result);
     }
+    //  Regular customers report
+    // GET api/customers/reports/regulars
+    [HttpGet("reports/regulars")]
+    public async Task<IActionResult> GetRegularCustomers()
+    {
+        var result = await _customerService.GetRegularCustomersAsync();
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    //  Pending credits report
+    // GET api/customers/reports/pending-credits
+    [HttpGet("reports/pending-credits")]
+    public async Task<IActionResult> GetPendingCredits()
+    {
+        var result = await _customerService.GetPendingCreditsAsync();
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
 }

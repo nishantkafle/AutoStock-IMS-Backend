@@ -9,11 +9,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Part> Parts => Set<Part>();
     public DbSet<Vendor> Vendors => Set<Vendor>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
+<<<<<<< HEAD
     public DbSet<Appointment> Appointments => Set<Appointment>();
     public DbSet<PartRequest> PartRequests => Set<PartRequest>();
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
+=======
+    
+
+>>>>>>> feature/pritha
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
