@@ -9,7 +9,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Part> Parts => Set<Part>();
     public DbSet<Vendor> Vendors => Set<Vendor>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
-    public DbSet<Invoice> Invoices => Set<Invoice>();
+    
 
 
     protected override void OnModelCreating(ModelBuilder builder)

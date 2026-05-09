@@ -186,36 +186,6 @@ public class CustomerService : ICustomerService
         return ApiResponse<List<CustomerReportDto>>.Ok(regulars);
     }
 
-    //  High spenders : customers with highest total invoice amounts
-    public async Task<ApiResponse<List<CustomerReportDto>>> GetHighSpendersAsync()
-    {
-        var customers = await _userManager.GetUsersInRoleAsync("Customer");
-
-        var invoices = await _db.Invoices.ToListAsync();
-
-        var spenders = customers
-            .Select(c => new
-            {
-                Customer = c,
-                TotalSpent = invoices
-                    .Where(i => i.CustomerPhone == c.PhoneNumber)
-                    .Sum(i => i.TotalAmount)
-            })
-            .Where(x => x.TotalSpent > 0)
-            .OrderByDescending(x => x.TotalSpent)
-            .Select(x => new CustomerReportDto
-            {
-                Id = x.Customer.Id,
-                FullName = x.Customer.FullName,
-                Email = x.Customer.Email ?? string.Empty,
-                PhoneNumber = x.Customer.PhoneNumber ?? string.Empty,
-                CreatedAt = x.Customer.CreatedAt,
-                TotalSpent = x.TotalSpent
-            }).ToList();
-
-        return ApiResponse<List<CustomerReportDto>>.Ok(spenders);
-    }
-
     //  Pending credits : customers with unpaid balance
     public async Task<ApiResponse<List<CustomerReportDto>>> GetPendingCreditsAsync()
     {

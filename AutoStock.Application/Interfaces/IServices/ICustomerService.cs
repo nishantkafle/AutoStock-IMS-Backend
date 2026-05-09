@@ -16,6 +16,5 @@ public interface ICustomerService
 
     //  Customer reports
     Task<ApiResponse<List<CustomerReportDto>>> GetRegularCustomersAsync();
-    Task<ApiResponse<List<CustomerReportDto>>> GetHighSpendersAsync();
     Task<ApiResponse<List<CustomerReportDto>>> GetPendingCreditsAsync();
 }
