@@ -59,6 +59,14 @@ public class CustomersController : ControllerBase
         var result = await _customerService.GetRegularCustomersAsync();
         return result.Success ? Ok(result) : BadRequest(result);
     }
+    //  High spenders report
+    // GET api/customers/reports/high-spenders
+    [HttpGet("reports/high-spenders")]
+    public async Task<IActionResult> GetHighSpenders()
+    {
+        var result = await _customerService.GetHighSpendersAsync();
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
 
     //  Pending credits report
     // GET api/customers/reports/pending-credits
