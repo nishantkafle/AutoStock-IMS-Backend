@@ -222,6 +222,69 @@ namespace AutoStock.Infrastructure.Migrations
                     b.ToTable("PartRequests");
                 });
 
+            modelBuilder.Entity("AutoStock.Domain.Entities.PurchaseInvoice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CreatedByAdminId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("InvoiceNumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Notes")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("PurchaseDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid>("VendorId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByAdminId");
+
+                    b.HasIndex("VendorId");
+
+                    b.ToTable("PurchaseInvoices");
+                });
+
+            modelBuilder.Entity("AutoStock.Domain.Entities.PurchaseInvoiceItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PartId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PurchaseInvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("UnitCost")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PartId");
+
+                    b.HasIndex("PurchaseInvoiceId");
+
+                    b.ToTable("PurchaseInvoiceItems");
+                });
+
             modelBuilder.Entity("AutoStock.Domain.Entities.Review", b =>
                 {
                     b.Property<Guid>("Id")
@@ -247,6 +310,66 @@ namespace AutoStock.Infrastructure.Migrations
                     b.HasIndex("CustomerId");
 
                     b.ToTable("Reviews");
+                });
+
+            modelBuilder.Entity("AutoStock.Domain.Entities.SaleInvoice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CustomerId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("InvoiceNumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.ToTable("SaleInvoices");
+                });
+
+            modelBuilder.Entity("AutoStock.Domain.Entities.SaleInvoiceItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PartName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("SaleInvoiceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("TotalPrice")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("numeric");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SaleInvoiceId");
+
+                    b.ToTable("SaleInvoiceItems");
                 });
 
             modelBuilder.Entity("AutoStock.Domain.Entities.User", b =>
@@ -615,6 +738,44 @@ namespace AutoStock.Infrastructure.Migrations
                     b.Navigation("Customer");
                 });
 
+            modelBuilder.Entity("AutoStock.Domain.Entities.PurchaseInvoice", b =>
+                {
+                    b.HasOne("AutoStock.Domain.Entities.User", "CreatedByAdmin")
+                        .WithMany()
+                        .HasForeignKey("CreatedByAdminId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AutoStock.Domain.Entities.Vendor", "Vendor")
+                        .WithMany()
+                        .HasForeignKey("VendorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CreatedByAdmin");
+
+                    b.Navigation("Vendor");
+                });
+
+            modelBuilder.Entity("AutoStock.Domain.Entities.PurchaseInvoiceItem", b =>
+                {
+                    b.HasOne("AutoStock.Domain.Entities.Part", "Part")
+                        .WithMany()
+                        .HasForeignKey("PartId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AutoStock.Domain.Entities.PurchaseInvoice", "PurchaseInvoice")
+                        .WithMany("Items")
+                        .HasForeignKey("PurchaseInvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Part");
+
+                    b.Navigation("PurchaseInvoice");
+                });
+
             modelBuilder.Entity("AutoStock.Domain.Entities.Review", b =>
                 {
                     b.HasOne("AutoStock.Domain.Entities.User", "Customer")
@@ -624,6 +785,28 @@ namespace AutoStock.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("AutoStock.Domain.Entities.SaleInvoice", b =>
+                {
+                    b.HasOne("AutoStock.Domain.Entities.User", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("AutoStock.Domain.Entities.SaleInvoiceItem", b =>
+                {
+                    b.HasOne("AutoStock.Domain.Entities.SaleInvoice", "SaleInvoice")
+                        .WithMany("Items")
+                        .HasForeignKey("SaleInvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("SaleInvoice");
                 });
 
             modelBuilder.Entity("AutoStock.Domain.Entities.Vehicle", b =>
@@ -689,6 +872,16 @@ namespace AutoStock.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("AutoStock.Domain.Entities.Invoice", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("AutoStock.Domain.Entities.PurchaseInvoice", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("AutoStock.Domain.Entities.SaleInvoice", b =>
                 {
                     b.Navigation("Items");
                 });
