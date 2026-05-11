@@ -166,4 +166,70 @@ public class CustomerService : ICustomerService
             }).ToList()
         };
     }
+    //  Regular customers : registered more than 3 months ago
+    public async Task<ApiResponse<List<CustomerReportDto>>> GetRegularCustomersAsync()
+    {
+        var threeMonthsAgo = DateTime.UtcNow.AddMonths(-3);
+        var customers = await _userManager.GetUsersInRoleAsync("Customer");
+
+        var regulars = customers
+            .Where(c => c.CreatedAt <= threeMonthsAgo)
+            .Select(c => new CustomerReportDto
+            {
+                Id = c.Id,
+                FullName = c.FullName,
+                Email = c.Email ?? string.Empty,
+                PhoneNumber = c.PhoneNumber ?? string.Empty,
+                CreatedAt = c.CreatedAt
+            }).ToList();
+
+        return ApiResponse<List<CustomerReportDto>>.Ok(regulars);
+    }
+    //  High spenders : customers with highest total invoice amounts
+    public async Task<ApiResponse<List<CustomerReportDto>>> GetHighSpendersAsync()
+    {
+        var customers = await _userManager.GetUsersInRoleAsync("Customer");
+
+        var invoices = await _db.Invoices.ToListAsync();
+
+        var spenders = customers
+            .Select(c => new
+            {
+                Customer = c,
+                TotalSpent = invoices
+                    .Where(i => i.CustomerPhone == c.PhoneNumber)
+                    .Sum(i => i.TotalAmount)
+            })
+            .Where(x => x.TotalSpent > 0)
+            .OrderByDescending(x => x.TotalSpent)
+            .Select(x => new CustomerReportDto
+            {
+                Id = x.Customer.Id,
+                FullName = x.Customer.FullName,
+                Email = x.Customer.Email ?? string.Empty,
+                PhoneNumber = x.Customer.PhoneNumber ?? string.Empty,
+                CreatedAt = x.Customer.CreatedAt,
+                TotalSpent = x.TotalSpent
+            }).ToList();
+
+        return ApiResponse<List<CustomerReportDto>>.Ok(spenders);
+    }
+    //  Pending credits : customers with unpaid balance
+    public async Task<ApiResponse<List<CustomerReportDto>>> GetPendingCreditsAsync()
+    {
+        var customers = await _userManager.GetUsersInRoleAsync("Customer");
+
+        var pending = customers
+            .Where(c => c.HasPendingCredit)
+            .Select(c => new CustomerReportDto
+            {
+                Id = c.Id,
+                FullName = c.FullName,
+                Email = c.Email ?? string.Empty,
+                PhoneNumber = c.PhoneNumber ?? string.Empty,
+                CreatedAt = c.CreatedAt
+            }).ToList();
+
+        return ApiResponse<List<CustomerReportDto>>.Ok(pending);
+    }
 }
