@@ -1,9 +1,10 @@
+using AutoStock.Application.Interfaces;
 using AutoStock.Application.Interfaces.IServices;
 using AutoStock.Application.Services;
 using AutoStock.Domain.Entities;
 using AutoStock.Infrastructure.Middleware;
-using AutoStock.Infrastructure.Services;
 using AutoStock.Infrastructure.Persistence;
+using AutoStock.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
@@ -75,6 +76,8 @@ builder.Services.AddScoped<IVendorService, VendorService>();
 builder.Services.AddScoped<IStaffService, StaffService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+builder.Services.AddScoped<IPurchaseInvoiceService, PurchaseInvoiceService>();
+builder.Services.AddScoped<ICustomerHistoryService, CustomerHistoryService>();
 // Memory cache
 builder.Services.AddMemoryCache();
 
