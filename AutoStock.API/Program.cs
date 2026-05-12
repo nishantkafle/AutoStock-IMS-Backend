@@ -66,8 +66,13 @@ builder.Services.AddAuthentication(options =>
 // Register services 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<GlobalExceptionHandler>();
+
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection("EmailSettings"));
+
 builder.Services.AddScoped<IPartService, PartService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IPartRequestService, PartRequestService>();
