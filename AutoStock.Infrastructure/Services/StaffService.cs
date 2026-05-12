@@ -9,7 +9,8 @@ namespace AutoStock.Infrastructure.Services;
 
 public class StaffService(
     UserManager<User> userManager,
-    ILogger<StaffService> logger
+    ILogger<StaffService> logger,
+    IEmailService emailService          
 ) : IStaffService
 {
     private static StaffResponseDto ToDto(User u, string role) => new()
@@ -43,7 +44,7 @@ public class StaffService(
         return ApiResponse<StaffResponseDto>.Ok(ToDto(user, "Staff"));
     }
 
-    // Admin creates staff - assigns Staff role automatically
+    // Admin creates staff - assigns Staff role 
     public async Task<ApiResponse<StaffResponseDto>> CreateStaffAsync(StaffCreateDto dto)
     {
         if (await userManager.FindByEmailAsync(dto.Email) != null)
@@ -63,6 +64,24 @@ public class StaffService(
 
         await userManager.AddToRoleAsync(user, "Staff");
         logger.LogInformation("Admin created staff account for {Email}", dto.Email);
+
+        // Send welcome email with login credentials
+        try
+        {
+            await emailService.SendCredentialsEmailAsync(
+                toEmail: dto.Email,
+                toName: dto.FullName,
+                password: dto.Password,
+                role: "Staff"
+            );
+            logger.LogInformation("Welcome email sent to staff {Email}", dto.Email);
+        }
+        catch (Exception ex)
+        {
+            // Don't fail the whole request if email fails - staff is still created
+            logger.LogWarning("Failed to send welcome email to {Email}: {Error}", dto.Email, ex.Message);
+        }
+
         return ApiResponse<StaffResponseDto>.Ok(ToDto(user, "Staff"), "Staff account created");
     }
 
