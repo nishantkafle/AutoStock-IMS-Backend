@@ -25,8 +25,17 @@ public class CreateInvoiceDto
     [Required]
     public List<CreateInvoiceItemDto> Items { get; set; } = new();
 
-    // The user wants to support discount by 5%, 3% and customize amount
-    // Let's pass the raw total discount amount from frontend, or discount percentage
-    // For simplicity, let's just accept DiscountAmount
     public decimal DiscountAmount { get; set; }
+
+    public string PaymentMethod { get; set; } = "Cash";
+
+    public decimal PaidAmount { get; set; }
+
+    public string? CustomerId { get; set; }
+}
+
+public class SettleInvoiceDto
+{
+    public decimal Amount { get; set; }
+    public string? Notes { get; set; }
 }

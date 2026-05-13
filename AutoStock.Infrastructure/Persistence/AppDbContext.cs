@@ -14,6 +14,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
+    public DbSet<CreditSettlement> CreditSettlements => Set<CreditSettlement>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

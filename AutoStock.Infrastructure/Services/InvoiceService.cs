@@ -16,7 +16,8 @@ public class InvoiceService(AppDbContext context) : IInvoiceService
             CustomerPhone = dto.CustomerPhone,
             CustomerAddress = dto.CustomerAddress,
             StaffId = staffId,
-            DiscountAmount = dto.DiscountAmount
+            DiscountAmount = dto.DiscountAmount,
+            PaymentMethod = dto.PaymentMethod
         };
 
         decimal subTotal = 0;
@@ -54,6 +55,11 @@ public class InvoiceService(AppDbContext context) : IInvoiceService
         var actualDiscount = dto.DiscountAmount > subTotal ? subTotal : dto.DiscountAmount;
         invoice.DiscountAmount = actualDiscount;
         invoice.TotalAmount = subTotal - actualDiscount;
+        
+        // Handle Partial Payment
+        invoice.PaidAmount = dto.PaidAmount;
+        invoice.RemainingBalance = invoice.TotalAmount - dto.PaidAmount;
+        invoice.CustomerId = dto.CustomerId;
 
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync();
@@ -65,6 +71,7 @@ public class InvoiceService(AppDbContext context) : IInvoiceService
     {
         var invoices = await context.Invoices
             .Include(i => i.Items)
+            .Include(i => i.Settlements)
             .OrderByDescending(i => i.CreatedAt)
             .ToListAsync();
 
@@ -75,9 +82,54 @@ public class InvoiceService(AppDbContext context) : IInvoiceService
     {
         var invoice = await context.Invoices
             .Include(i => i.Items)
+            .Include(i => i.Settlements)
             .FirstOrDefaultAsync(i => i.Id == id);
 
         return invoice == null ? null : MapToDto(invoice);
+    }
+
+    public async Task<InvoiceResponseDto> SettleInvoiceAsync(Guid id, string staffId, SettleInvoiceDto dto)
+    {
+        var invoice = await context.Invoices
+            .FirstOrDefaultAsync(i => i.Id == id);
+
+        if (invoice == null) throw new Exception("Invoice not found");
+
+        var settlement = new CreditSettlement
+        {
+            Id = Guid.NewGuid(),
+            InvoiceId = id,
+            Amount = dto.Amount,
+            Notes = dto.Notes,
+            StaffId = staffId,
+            SettlementDate = DateTime.UtcNow
+        };
+
+        // Explicitly add the settlement
+        context.CreditSettlements.Add(settlement);
+
+        // Update invoice totals
+        invoice.PaidAmount += dto.Amount;
+        invoice.RemainingBalance = invoice.TotalAmount - invoice.PaidAmount;
+        
+        // Ensure EF knows the invoice is modified
+        context.Entry(invoice).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // If it fails, reload and try one more time
+            context.Entry(invoice).Reload();
+            invoice.PaidAmount += dto.Amount;
+            invoice.RemainingBalance = invoice.TotalAmount - invoice.PaidAmount;
+            await context.SaveChangesAsync();
+        }
+
+        // Return the full updated invoice
+        return await GetInvoiceByIdAsync(id) ?? throw new Exception("Error reloading invoice");
     }
 
     private static InvoiceResponseDto MapToDto(Invoice invoice)
@@ -93,7 +145,11 @@ public class InvoiceService(AppDbContext context) : IInvoiceService
             DiscountAmount = invoice.DiscountAmount,
             TotalAmount = invoice.TotalAmount,
             CreatedAt = invoice.CreatedAt,
-            Items = invoice.Items.Select(i => new InvoiceItemResponseDto
+            PaymentMethod = invoice.PaymentMethod,
+            PaidAmount = invoice.PaidAmount,
+            RemainingBalance = invoice.RemainingBalance,
+            CustomerId = invoice.CustomerId,
+            Items = (invoice.Items ?? new List<InvoiceItem>()).Select(i => new InvoiceItemResponseDto
             {
                 Id = i.Id,
                 PartId = i.PartId,
@@ -101,7 +157,15 @@ public class InvoiceService(AppDbContext context) : IInvoiceService
                 Quantity = i.Quantity,
                 UnitPrice = i.UnitPrice,
                 TotalPrice = i.TotalPrice
-            }).ToList()
+            }).ToList(),
+            Settlements = (invoice.Settlements ?? new List<CreditSettlement>()).Select(s => new SettlementResponseDto
+            {
+                Id = s.Id,
+                Amount = s.Amount,
+                SettlementDate = s.SettlementDate,
+                Notes = s.Notes,
+                StaffId = s.StaffId
+            }).OrderBy(s => s.SettlementDate).ToList()
         };
     }
 }

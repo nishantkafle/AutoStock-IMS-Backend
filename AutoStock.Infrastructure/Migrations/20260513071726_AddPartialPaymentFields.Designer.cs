@@ -3,6 +3,7 @@ using System;
 using AutoStock.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AutoStock.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260513071726_AddPartialPaymentFields")]
+    partial class AddPartialPaymentFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -60,34 +63,6 @@ namespace AutoStock.Infrastructure.Migrations
                     b.HasIndex("VehicleId");
 
                     b.ToTable("Appointments");
-                });
-
-            modelBuilder.Entity("AutoStock.Domain.Entities.CreditSettlement", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("numeric");
-
-                    b.Property<Guid>("InvoiceId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("SettlementDate")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("StaffId")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("InvoiceId");
-
-                    b.ToTable("CreditSettlements");
                 });
 
             modelBuilder.Entity("AutoStock.Domain.Entities.Invoice", b =>
@@ -600,17 +575,6 @@ namespace AutoStock.Infrastructure.Migrations
                     b.Navigation("Vehicle");
                 });
 
-            modelBuilder.Entity("AutoStock.Domain.Entities.CreditSettlement", b =>
-                {
-                    b.HasOne("AutoStock.Domain.Entities.Invoice", "Invoice")
-                        .WithMany("Settlements")
-                        .HasForeignKey("InvoiceId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Invoice");
-                });
-
             modelBuilder.Entity("AutoStock.Domain.Entities.Invoice", b =>
                 {
                     b.HasOne("AutoStock.Domain.Entities.User", "Customer")
@@ -745,8 +709,6 @@ namespace AutoStock.Infrastructure.Migrations
             modelBuilder.Entity("AutoStock.Domain.Entities.Invoice", b =>
                 {
                     b.Navigation("Items");
-
-                    b.Navigation("Settlements");
                 });
 
             modelBuilder.Entity("AutoStock.Domain.Entities.Vendor", b =>

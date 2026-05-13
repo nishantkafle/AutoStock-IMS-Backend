@@ -1,4 +1,4 @@
-﻿using AutoStock.Application;
+using AutoStock.Application;
 using AutoStock.Application.DTOs.Appointments;
 using AutoStock.Application.Interfaces.IServices;
 using AutoStock.Domain.Entities;
@@ -10,7 +10,8 @@ namespace AutoStock.Infrastructure.Services;
 
 public class AppointmentService(
     AppDbContext db,
-    ILogger<AppointmentService> logger
+    ILogger<AppointmentService> logger,
+    IEmailService emailService
 ) : IAppointmentService
 {
     private static AppointmentResponseDto ToDto(Appointment a) => new()
@@ -52,6 +53,16 @@ public class AppointmentService(
         logger.LogInformation("Appointment booked by customer {Id} for {ServiceType}",
             customerId, dto.ServiceType);
 
+        if (appointment.Customer?.Email != null)
+        {
+            await emailService.SendAppointmentEmailAsync(
+                appointment.Customer.Email,
+                appointment.Customer.FullName,
+                "Appointment Booking Confirmation",
+                $"Dear {appointment.Customer.FullName},\n\nYour appointment for {dto.ServiceType} has been successfully booked for {appointment.AppointmentDate:g}.\nWe will review and confirm it shortly.\n\nThank you,\nAutoStock IMS"
+            );
+        }
+
         return ApiResponse<AppointmentResponseDto>.Ok(ToDto(appointment), "Appointment booked successfully");
     }
 
@@ -72,6 +83,7 @@ public class AppointmentService(
     public async Task<ApiResponse<string>> CancelAppointmentAsync(string customerId, Guid appointmentId)
     {
         var appointment = await db.Appointments
+            .Include(a => a.Customer)
             .FirstOrDefaultAsync(a => a.Id == appointmentId && a.CustomerId == customerId);
 
         if (appointment == null)
@@ -82,6 +94,17 @@ public class AppointmentService(
 
         appointment.Status = "Cancelled";
         await db.SaveChangesAsync();
+
+        if (appointment.Customer?.Email != null)
+        {
+            await emailService.SendAppointmentEmailAsync(
+                appointment.Customer.Email,
+                appointment.Customer.FullName,
+                "Appointment Cancelled",
+                $"Dear {appointment.Customer.FullName},\n\nYour appointment for {appointment.ServiceType} on {appointment.AppointmentDate:g} has been successfully cancelled.\n\nThank you,\nAutoStock IMS"
+            );
+        }
+
         return ApiResponse<string>.Ok("Appointment cancelled");
     }
 
@@ -117,6 +140,17 @@ public class AppointmentService(
         await db.SaveChangesAsync();
 
         logger.LogInformation("Appointment {Id} status changed to {Status}", appointmentId, dto.Status);
+
+        if (appointment.Customer?.Email != null)
+        {
+            await emailService.SendAppointmentEmailAsync(
+                appointment.Customer.Email,
+                appointment.Customer.FullName,
+                $"Appointment Status Update: {dto.Status}",
+                $"Dear {appointment.Customer.FullName},\n\nThe status of your appointment for {appointment.ServiceType} on {appointment.AppointmentDate:g} has been updated to: {dto.Status}.\n\nThank you,\nAutoStock IMS"
+            );
+        }
+
         return ApiResponse<AppointmentResponseDto>.Ok(ToDto(appointment), "Status updated");
     }
 }
