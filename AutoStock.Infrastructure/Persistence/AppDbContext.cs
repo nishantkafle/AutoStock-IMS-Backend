@@ -14,72 +14,69 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
+<<<<<<< HEAD
     public DbSet<CreditSettlement> CreditSettlements => Set<CreditSettlement>();
+=======
+    public DbSet<PurchaseInvoice> PurchaseInvoices => Set<PurchaseInvoice>();
+    public DbSet<PurchaseInvoiceItem> PurchaseInvoiceItems => Set<PurchaseInvoiceItem>();
+    public DbSet<SaleInvoice> SaleInvoices { get; set; }
+    public DbSet<SaleInvoiceItem> SaleInvoiceItems { get; set; }
+>>>>>>> 8ac8295763bb9c2ee4f81140895b1e42df3e2454
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
 
-        // Fast login lookup 
         builder.Entity<User>()
             .HasIndex(u => u.Email)
             .IsUnique();
 
-        // Vehicle number must be unique 
         builder.Entity<Vehicle>()
             .HasIndex(v => v.VehicleNumber)
             .IsUnique();
 
-        // Vehicle belongs to a User
         builder.Entity<Vehicle>()
             .HasOne(v => v.Customer)
             .WithMany()
             .HasForeignKey(v => v.CustomerId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Appointment belongs to a User (customer)
         builder.Entity<Appointment>()
             .HasOne(a => a.Customer)
             .WithMany()
             .HasForeignKey(a => a.CustomerId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Appointment optionally linked to a vehicle
         builder.Entity<Appointment>()
             .HasOne(a => a.Vehicle)
             .WithMany()
             .HasForeignKey(a => a.VehicleId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // PartRequest belongs to a User
         builder.Entity<PartRequest>()
             .HasOne(r => r.Customer)
             .WithMany()
             .HasForeignKey(r => r.CustomerId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Review belongs to a User
         builder.Entity<Review>()
             .HasOne(r => r.Customer)
             .WithMany()
             .HasForeignKey(r => r.CustomerId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Invoice belongs to Staff
         builder.Entity<Invoice>()
             .HasOne(i => i.Staff)
             .WithMany()
             .HasForeignKey(i => i.StaffId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // InvoiceItem belongs to Invoice
         builder.Entity<InvoiceItem>()
             .HasOne(i => i.Invoice)
             .WithMany(inv => inv.Items)
             .HasForeignKey(i => i.InvoiceId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // InvoiceItem has one Part
         builder.Entity<InvoiceItem>()
             .HasOne(i => i.Part)
             .WithMany()

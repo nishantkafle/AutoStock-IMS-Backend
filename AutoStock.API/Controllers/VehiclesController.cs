@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 using AutoStock.Application.DTOs.Vehicle;
+=======
+﻿using AutoStock.Application.DTOs.Vehicle;
+>>>>>>> 8ac8295763bb9c2ee4f81140895b1e42df3e2454
 using AutoStock.Application.Interfaces.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,13 +12,15 @@ namespace AutoStock.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+<<<<<<< HEAD
 [Authorize] // All vehicle endpoints require login
+=======
+[Authorize]
+>>>>>>> 8ac8295763bb9c2ee4f81140895b1e42df3e2454
 public class VehiclesController(IVehicleService vehicleService) : ControllerBase
 {
-    // Gets the logged-in user's ID from their JWT token
     private string GetUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-    // GET api/vehicles - customer sees their own vehicles
     [HttpGet]
     public async Task<IActionResult> GetMyVehicles()
     {
@@ -22,7 +28,6 @@ public class VehiclesController(IVehicleService vehicleService) : ControllerBase
         return Ok(result);
     }
 
-    // POST api/vehicles - customer adds a vehicle 
     [HttpPost]
     public async Task<IActionResult> Add([FromBody] VehicleRequestDto dto)
     {
@@ -30,7 +35,6 @@ public class VehiclesController(IVehicleService vehicleService) : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    // PUT api/vehicles/{id} - customer updates vehicle info
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] VehicleRequestDto dto)
     {
@@ -38,11 +42,14 @@ public class VehiclesController(IVehicleService vehicleService) : ControllerBase
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    // DELETE api/vehicles/{id} - customer removes a vehicle
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
         var result = await vehicleService.DeleteVehicleAsync(GetUserId(), id);
         return result.Success ? Ok(result) : NotFound(result);
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 8ac8295763bb9c2ee4f81140895b1e42df3e2454

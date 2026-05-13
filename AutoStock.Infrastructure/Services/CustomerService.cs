@@ -5,6 +5,7 @@ using AutoStock.Domain.Entities;
 using AutoStock.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace AutoStock.Infrastructure.Services;
 
@@ -13,11 +14,19 @@ public class CustomerService : ICustomerService
 {
     private readonly UserManager<User> _userManager;
     private readonly AppDbContext _db;
+    private readonly IEmailService _emailService;   
+    private readonly ILogger<CustomerService> _logger; 
 
-    public CustomerService(UserManager<User> userManager, AppDbContext db)
+    public CustomerService(
+        UserManager<User> userManager,
+        AppDbContext db,
+        IEmailService emailService,             
+        ILogger<CustomerService> logger)       
     {
         _userManager = userManager;
         _db = db;
+        _emailService = emailService;
+        _logger = logger;
     }
 
     // Feature 6: Staff registers new customer with vehicle details
@@ -47,6 +56,12 @@ public class CustomerService : ICustomerService
         await _userManager.AddToRoleAsync(user, "Customer");
 
         // Add vehicle
+        var vehicleExists = await _db.Vehicles
+            .AnyAsync(v => v.VehicleNumber == dto.VehicleNumber);
+        if (vehicleExists)
+            return ApiResponse<CustomerResponseDto>.Fail(
+                $"Vehicle number '{dto.VehicleNumber}' is already registered.");
+
         var vehicle = new Vehicle
         {
             CustomerId = user.Id,
@@ -54,11 +69,30 @@ public class CustomerService : ICustomerService
             Make = dto.Make,
             Model = dto.Model,
             Year = dto.Year,
-           
         };
 
         _db.Vehicles.Add(vehicle);
         await _db.SaveChangesAsync();
+
+        // Send welcome email with credentials + vehicle info
+        try
+        {
+            string vehicleInfo = $"{dto.Make} {dto.Model} ({dto.Year}) - {dto.VehicleNumber}";
+
+            await _emailService.SendCredentialsEmailAsync(
+                toEmail: dto.Email,
+                toName: dto.FullName,
+                password: dto.Password,
+                role: "Customer",
+                extraInfo: vehicleInfo
+            );
+            _logger.LogInformation("Welcome email sent to customer {Email}", dto.Email);
+        }
+        catch (Exception ex)
+        {
+            // Don't fail registration if email fails - customer is still created
+            _logger.LogWarning("Failed to send welcome email to customer {Email}: {Error}", dto.Email, ex.Message);
+        }
 
         var response = MapToResponseDto(user, new List<Vehicle> { vehicle });
         return ApiResponse<CustomerResponseDto>.Ok(response, "Customer registered successfully");
@@ -71,7 +105,6 @@ public class CustomerService : ICustomerService
         if (user == null)
             return ApiResponse<CustomerResponseDto>.Fail("Customer not found");
 
-        // Check if user is a customer
         var roles = await _userManager.GetRolesAsync(user);
         if (!roles.Contains("Customer"))
             return ApiResponse<CustomerResponseDto>.Fail("User is not a customer");
@@ -100,7 +133,8 @@ public class CustomerService : ICustomerService
 
         return ApiResponse<List<CustomerResponseDto>>.Ok(result);
     }
-    //  Staff searches customers by name, phone, ID, or vehicle number
+
+    // Staff searches customers by name, phone, ID, or vehicle number
     public async Task<ApiResponse<List<CustomerResponseDto>>> SearchCustomersAsync(string keyword)
     {
         if (string.IsNullOrWhiteSpace(keyword))
@@ -108,23 +142,19 @@ public class CustomerService : ICustomerService
 
         keyword = keyword.ToLower();
 
-        // Get all customers
         var customers = await _userManager.GetUsersInRoleAsync("Customer");
 
-        // Filter by name, phone, or ID
         var filtered = customers.Where(c =>
             c.FullName.ToLower().Contains(keyword) ||
             (c.PhoneNumber != null && c.PhoneNumber.Contains(keyword)) ||
             c.Id.ToLower().Contains(keyword)
         ).ToList();
 
-        // Also search by vehicle number
         var vehicleMatches = await _db.Vehicles
             .Where(v => v.VehicleNumber.ToLower().Contains(keyword))
             .Select(v => v.CustomerId)
             .ToListAsync();
 
-        // Add customers found by vehicle number
         foreach (var customerId in vehicleMatches)
         {
             var customer = customers.FirstOrDefault(c => c.Id == customerId);
@@ -144,7 +174,7 @@ public class CustomerService : ICustomerService
         return ApiResponse<List<CustomerResponseDto>>.Ok(result);
     }
 
-    // Helper method to map User + Vehicles to response DTO
+    // Helper: map User + Vehicles to response DTO
     private static CustomerResponseDto MapToResponseDto(User user, List<Vehicle> vehicles)
     {
         return new CustomerResponseDto
@@ -165,5 +195,73 @@ public class CustomerService : ICustomerService
                 LastServiceDate = v.LastServiceDate
             }).ToList()
         };
+    }
+
+    // Regular customers: registered more than 3 months ago
+    public async Task<ApiResponse<List<CustomerReportDto>>> GetRegularCustomersAsync()
+    {
+        var threeMonthsAgo = DateTime.UtcNow.AddMonths(-3);
+        var customers = await _userManager.GetUsersInRoleAsync("Customer");
+
+        var regulars = customers
+            .Where(c => c.CreatedAt <= threeMonthsAgo)
+            .Select(c => new CustomerReportDto
+            {
+                Id = c.Id,
+                FullName = c.FullName,
+                Email = c.Email ?? string.Empty,
+                PhoneNumber = c.PhoneNumber ?? string.Empty,
+                CreatedAt = c.CreatedAt
+            }).ToList();
+
+        return ApiResponse<List<CustomerReportDto>>.Ok(regulars);
+    }
+
+    // High spenders: customers with highest total invoice amounts
+    public async Task<ApiResponse<List<CustomerReportDto>>> GetHighSpendersAsync()
+    {
+        var customers = await _userManager.GetUsersInRoleAsync("Customer");
+        var invoices = await _db.Invoices.ToListAsync();
+
+        var spenders = customers
+            .Select(c => new
+            {
+                Customer = c,
+                TotalSpent = invoices
+                    .Where(i => i.CustomerPhone == c.PhoneNumber)
+                    .Sum(i => i.TotalAmount)
+            })
+            .Where(x => x.TotalSpent > 0)
+            .OrderByDescending(x => x.TotalSpent)
+            .Select(x => new CustomerReportDto
+            {
+                Id = x.Customer.Id,
+                FullName = x.Customer.FullName,
+                Email = x.Customer.Email ?? string.Empty,
+                PhoneNumber = x.Customer.PhoneNumber ?? string.Empty,
+                CreatedAt = x.Customer.CreatedAt,
+                TotalSpent = x.TotalSpent
+            }).ToList();
+
+        return ApiResponse<List<CustomerReportDto>>.Ok(spenders);
+    }
+
+    // Pending credits: customers with unpaid balance
+    public async Task<ApiResponse<List<CustomerReportDto>>> GetPendingCreditsAsync()
+    {
+        var customers = await _userManager.GetUsersInRoleAsync("Customer");
+
+        var pending = customers
+            .Where(c => c.HasPendingCredit)
+            .Select(c => new CustomerReportDto
+            {
+                Id = c.Id,
+                FullName = c.FullName,
+                Email = c.Email ?? string.Empty,
+                PhoneNumber = c.PhoneNumber ?? string.Empty,
+                CreatedAt = c.CreatedAt
+            }).ToList();
+
+        return ApiResponse<List<CustomerReportDto>>.Ok(pending);
     }
 }

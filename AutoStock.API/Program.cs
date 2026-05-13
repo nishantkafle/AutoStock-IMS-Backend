@@ -1,9 +1,10 @@
+using AutoStock.Application.Interfaces;
 using AutoStock.Application.Interfaces.IServices;
 using AutoStock.Application.Services;
 using AutoStock.Domain.Entities;
 using AutoStock.Infrastructure.Middleware;
-using AutoStock.Infrastructure.Services;
 using AutoStock.Infrastructure.Persistence;
+using AutoStock.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
@@ -65,8 +66,13 @@ builder.Services.AddAuthentication(options =>
 // Register services 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<GlobalExceptionHandler>();
+
+builder.Services.Configure<EmailSettings>(
+    builder.Configuration.GetSection("EmailSettings"));
+
 builder.Services.AddScoped<IPartService, PartService>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IPartRequestService, PartRequestService>();
@@ -75,7 +81,13 @@ builder.Services.AddScoped<IVendorService, VendorService>();
 builder.Services.AddScoped<IStaffService, StaffService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+<<<<<<< HEAD
 builder.Services.AddScoped<IEmailService, EmailService>();
+=======
+builder.Services.AddScoped<IPurchaseInvoiceService, PurchaseInvoiceService>();
+builder.Services.AddScoped<ICustomerHistoryService, CustomerHistoryService>();
+builder.Services.AddScoped<IFinancialReportService, FinancialReportService>();
+>>>>>>> 8ac8295763bb9c2ee4f81140895b1e42df3e2454
 // Memory cache
 builder.Services.AddMemoryCache();
 
