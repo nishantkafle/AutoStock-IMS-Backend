@@ -81,13 +81,9 @@ builder.Services.AddScoped<IVendorService, VendorService>();
 builder.Services.AddScoped<IStaffService, StaffService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
 builder.Services.AddScoped<IInvoiceService, InvoiceService>();
-<<<<<<< HEAD
-builder.Services.AddScoped<IEmailService, EmailService>();
-=======
 builder.Services.AddScoped<IPurchaseInvoiceService, PurchaseInvoiceService>();
 builder.Services.AddScoped<ICustomerHistoryService, CustomerHistoryService>();
 builder.Services.AddScoped<IFinancialReportService, FinancialReportService>();
->>>>>>> 8ac8295763bb9c2ee4f81140895b1e42df3e2454
 // Memory cache
 builder.Services.AddMemoryCache();
 

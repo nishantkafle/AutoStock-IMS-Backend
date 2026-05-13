@@ -14,14 +14,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<Invoice> Invoices => Set<Invoice>();
     public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
-<<<<<<< HEAD
     public DbSet<CreditSettlement> CreditSettlements => Set<CreditSettlement>();
-=======
     public DbSet<PurchaseInvoice> PurchaseInvoices => Set<PurchaseInvoice>();
     public DbSet<PurchaseInvoiceItem> PurchaseInvoiceItems => Set<PurchaseInvoiceItem>();
     public DbSet<SaleInvoice> SaleInvoices { get; set; }
     public DbSet<SaleInvoiceItem> SaleInvoiceItems { get; set; }
->>>>>>> 8ac8295763bb9c2ee4f81140895b1e42df3e2454
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
