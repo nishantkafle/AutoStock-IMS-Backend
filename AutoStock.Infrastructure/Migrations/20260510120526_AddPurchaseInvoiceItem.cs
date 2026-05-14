@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -10,6 +10,7 @@ namespace AutoStock.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            /*
             migrationBuilder.DropForeignKey(
                 name: "FK_PurchaseInvoiceItem_Parts_PartId",
                 table: "PurchaseInvoiceItem");
@@ -56,6 +57,7 @@ namespace AutoStock.Infrastructure.Migrations
                 principalTable: "PurchaseInvoices",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Cascade);
+            */
         }
 
         /// <inheritdoc />

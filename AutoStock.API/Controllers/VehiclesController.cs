@@ -1,4 +1,4 @@
-﻿using AutoStock.Application.DTOs.Vehicle;
+using AutoStock.Application.DTOs.Vehicle;
 using AutoStock.Application.Interfaces.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

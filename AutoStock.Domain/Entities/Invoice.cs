@@ -13,6 +13,7 @@ public class Invoice
     public string CustomerPhone { get; set; } = string.Empty;
 
     public string CustomerAddress { get; set; } = string.Empty;
+    public string CustomerEmail { get; set; } = string.Empty;
 
     // Staff user who created it
     public string StaffId { get; set; } = string.Empty;
@@ -29,4 +30,16 @@ public class Invoice
     public decimal TotalAmount { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    
+    public string PaymentMethod { get; set; } = string.Empty;
+
+    // Partial Payment fields
+    public decimal PaidAmount { get; set; }
+    public decimal RemainingBalance { get; set; }
+
+    // Link to registered customer if applicable
+    public string? CustomerId { get; set; }
+    public User? Customer { get; set; }
+
+    public ICollection<CreditSettlement> Settlements { get; set; } = new List<CreditSettlement>();
 }
