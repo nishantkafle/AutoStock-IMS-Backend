@@ -1,4 +1,4 @@
-﻿using AutoStock.Application;
+using AutoStock.Application;
 using AutoStock.Application.DTOs.Vehicle;
 using AutoStock.Application.Interfaces.IServices;
 using AutoStock.Domain.Entities;
@@ -16,6 +16,7 @@ public class VehicleService(
     private static VehicleResponseDto ToDto(Vehicle v) => new()
     {
         Id = v.Id,
+        CustomerName = v.Customer?.FullName ?? "",
         Make = v.Make,
         Model = v.Model,
         Year = v.Year,
@@ -25,10 +26,10 @@ public class VehicleService(
         CreatedAt = v.CreatedAt
     };
 
-    // Customer can only see their own vehicles
     public async Task<ApiResponse<List<VehicleResponseDto>>> GetMyVehiclesAsync(string userId)
     {
         var vehicles = await db.Vehicles
+            .Include(v => v.Customer)
             .Where(v => v.CustomerId == userId)
             .OrderBy(v => v.Make)
             .ToListAsync();
@@ -36,9 +37,19 @@ public class VehicleService(
         return ApiResponse<List<VehicleResponseDto>>.Ok(vehicles.Select(ToDto).ToList());
     }
 
+    public async Task<ApiResponse<List<VehicleResponseDto>>> GetAllVehiclesAsync()
+    {
+        var vehicles = await db.Vehicles
+            .Include(v => v.Customer)
+            .OrderBy(v => v.Customer!.FullName)
+            .ThenBy(v => v.Make)
+            .ToListAsync();
+
+        return ApiResponse<List<VehicleResponseDto>>.Ok(vehicles.Select(ToDto).ToList());
+    }
+
     public async Task<ApiResponse<VehicleResponseDto>> AddVehicleAsync(string userId, VehicleRequestDto dto)
     {
-        // Check vehicle number is not already registered
         var exists = await db.Vehicles.AnyAsync(v => v.VehicleNumber == dto.VehicleNumber);
         if (exists)
             return ApiResponse<VehicleResponseDto>.Fail("Vehicle number already registered in the system");
@@ -91,3 +102,4 @@ public class VehicleService(
         return ApiResponse<string>.Ok("Vehicle removed");
     }
 }
+

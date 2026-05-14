@@ -1,0 +1,29 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# Logs
+logs/
+*.log
+
+# Sensitive config files
+appsettings.json
+appsettings.*.json
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# IDE / Editor
+.vs/
+.idea/
+.vscode/
+*.swp
+*.*~
+
+# OS generated files
+.DS_Store
+Thumbs.db

@@ -1,4 +1,4 @@
-﻿using AutoStock.Application;
+using AutoStock.Application;
 using AutoStock.Application.DTOs.PartRequests;
 using AutoStock.Application.Interfaces.IServices;
 using AutoStock.Domain.Entities;
@@ -18,10 +18,14 @@ public class PartRequestService(
         Id = r.Id,
         CustomerId = r.CustomerId,
         CustomerName = r.Customer?.FullName ?? "",
-        PartName = r.PartName,
+        PartId = r.PartId,
+        PartName = r.Part?.Name ?? r.PartName,
+        Price = r.Part?.Price ?? 0,
+        Quantity = r.Quantity,
         Description = r.Description,
         Urgency = r.Urgency,
         Status = r.Status,
+        IsPaid = r.IsPaid,
         RequestedAt = r.RequestedAt,
         ResolvedAt = r.ResolvedAt
     };
@@ -29,11 +33,20 @@ public class PartRequestService(
     public async Task<ApiResponse<PartRequestResponseDto>> CreateRequestAsync(
         string customerId, PartRequestCreateDto dto)
     {
+        var part = await db.Parts.FindAsync(dto.PartId);
+        if (part == null)
+            return ApiResponse<PartRequestResponseDto>.Fail("Part not found");
+
+        if (part.StockQty < dto.Quantity)
+            return ApiResponse<PartRequestResponseDto>.Fail("Not enough stock available");
+
         var request = new PartRequest
         {
             CustomerId = customerId,
-            PartName = dto.PartName,
+            PartId = dto.PartId,
+            PartName = part.Name,
             Description = dto.Description,
+            Quantity = dto.Quantity,
             Urgency = dto.Urgency,
             Status = "Pending"
         };
@@ -42,8 +55,9 @@ public class PartRequestService(
         await db.SaveChangesAsync();
 
         await db.Entry(request).Reference(r => r.Customer).LoadAsync();
+        await db.Entry(request).Reference(r => r.Part).LoadAsync();
 
-        logger.LogInformation("Part request created by {CustomerId} for {PartName}", customerId, dto.PartName);
+        logger.LogInformation("Part request created by {CustomerId} for {PartName}", customerId, part.Name);
         return ApiResponse<PartRequestResponseDto>.Ok(ToDto(request), "Part request submitted");
     }
 
@@ -51,6 +65,7 @@ public class PartRequestService(
     {
         var list = await db.PartRequests
             .Include(r => r.Customer)
+            .Include(r => r.Part)
             .Where(r => r.CustomerId == customerId)
             .OrderByDescending(r => r.RequestedAt)
             .ToListAsync();
@@ -58,7 +73,6 @@ public class PartRequestService(
         return ApiResponse<List<PartRequestResponseDto>>.Ok(list.Select(ToDto).ToList());
     }
 
-    // Customer can only delete their own pending requests
     public async Task<ApiResponse<string>> DeleteRequestAsync(string customerId, Guid requestId)
     {
         var request = await db.PartRequests
@@ -79,13 +93,13 @@ public class PartRequestService(
     {
         var list = await db.PartRequests
             .Include(r => r.Customer)
+            .Include(r => r.Part)
             .OrderByDescending(r => r.RequestedAt)
             .ToListAsync();
 
         return ApiResponse<List<PartRequestResponseDto>>.Ok(list.Select(ToDto).ToList());
     }
 
-    // Admin or staff fulfils or rejects a request
     public async Task<ApiResponse<PartRequestResponseDto>> UpdateStatusAsync(Guid requestId, string status)
     {
         var allowed = new[] { "Pending", "Fulfilled", "Rejected" };
@@ -94,6 +108,7 @@ public class PartRequestService(
 
         var request = await db.PartRequests
             .Include(r => r.Customer)
+            .Include(r => r.Part)
             .FirstOrDefaultAsync(r => r.Id == requestId);
 
         if (request == null)
@@ -107,4 +122,49 @@ public class PartRequestService(
         logger.LogInformation("Part request {Id} marked as {Status}", requestId, status);
         return ApiResponse<PartRequestResponseDto>.Ok(ToDto(request), "Status updated");
     }
+
+    public async Task<ApiResponse<PartRequestResponseDto>> PayRequestAsync(string customerId, Guid requestId)
+    {
+        var request = await db.PartRequests
+            .Include(r => r.Customer)
+            .Include(r => r.Part)
+            .FirstOrDefaultAsync(r => r.Id == requestId && r.CustomerId == customerId);
+
+        if (request == null)
+            return ApiResponse<PartRequestResponseDto>.Fail("Request not found");
+
+        if (request.IsPaid)
+            return ApiResponse<PartRequestResponseDto>.Fail("Already paid");
+
+        if (request.Status != "Fulfilled")
+            return ApiResponse<PartRequestResponseDto>.Fail("Request must be fulfilled by admin before payment");
+
+        if (request.Part == null)
+            return ApiResponse<PartRequestResponseDto>.Fail("Part not found");
+
+        if (request.Part.StockQty < request.Quantity)
+            return ApiResponse<PartRequestResponseDto>.Fail("Not enough stock available");
+
+        var totalCost = request.Part.Price * request.Quantity;
+
+        request.Part.StockQty -= request.Quantity;
+        request.Part.UpdatedAt = DateTime.UtcNow;
+        request.IsPaid = true;
+
+        await db.SaveChangesAsync();
+        logger.LogInformation("Part request {Id} paid, stock decreased by {Qty}", requestId, request.Quantity);
+        
+        var dtoResponse = ToDto(request);
+
+        // Loyalty Program: 10% discount if total cost > 5000
+        if (totalCost > 5000)
+        {
+            var discount = totalCost * 0.10m;
+            dtoResponse.Price = request.Part.Price - (discount / request.Quantity); // Adjust the price returned to reflect discount
+            logger.LogInformation("Loyalty discount of {Discount} applied to part request {Id}", discount, requestId);
+        }
+
+        return ApiResponse<PartRequestResponseDto>.Ok(dtoResponse, "Payment successful, stock updated");
+    }
 }
+

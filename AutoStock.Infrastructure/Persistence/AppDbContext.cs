@@ -56,11 +56,23 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : IdentityDbCo
             .HasForeignKey(r => r.CustomerId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.Entity<PartRequest>()
+            .HasOne(r => r.Part)
+            .WithMany()
+            .HasForeignKey(r => r.PartId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.Entity<Review>()
             .HasOne(r => r.Customer)
             .WithMany()
             .HasForeignKey(r => r.CustomerId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<Review>()
+            .HasOne(r => r.PartRequest)
+            .WithMany()
+            .HasForeignKey(r => r.PartRequestId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.Entity<Invoice>()
             .HasOne(i => i.Staff)

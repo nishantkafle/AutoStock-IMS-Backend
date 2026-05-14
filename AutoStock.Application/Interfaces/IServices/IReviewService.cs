@@ -1,4 +1,4 @@
-﻿using AutoStock.Application.DTOs.Reviews;
+using AutoStock.Application.DTOs.Reviews;
 
 namespace AutoStock.Application.Interfaces.IServices;
 

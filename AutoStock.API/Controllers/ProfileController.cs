@@ -1,4 +1,4 @@
-﻿using AutoStock.Domain.Entities;
+using AutoStock.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +13,7 @@ public class UpdateProfileDto
 {
     [Required]
     public string FullName { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
 }
 
 public class ChangePasswordDto
@@ -44,12 +45,13 @@ public class ProfileController(UserManager<User> userManager) : ControllerBase
             user.Id,
             user.FullName,
             user.Email,
+            user.PhoneNumber,
             Role = roles.FirstOrDefault() ?? "",
             user.CreatedAt
         }));
     }
 
-    // PUT api/profile - customer updates their display name 
+    // PUT api/profile - customer updates their display name and phone
     [HttpPut]
     public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto dto)
     {
@@ -57,6 +59,7 @@ public class ProfileController(UserManager<User> userManager) : ControllerBase
         if (user == null) return NotFound();
 
         user.FullName = dto.FullName;
+        user.PhoneNumber = dto.PhoneNumber;
         await userManager.UpdateAsync(user);
 
         return Ok(ApiResponse<string>.Ok("Profile updated successfully"));

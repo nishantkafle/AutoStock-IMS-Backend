@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace AutoStock.Domain.Entities;
 
@@ -10,7 +10,9 @@ public class Review
     public string CustomerId { get; set; } = string.Empty;
     public User? Customer { get; set; }
 
-    // 1 to 5 stars
+    public Guid? PartRequestId { get; set; }
+    public PartRequest? PartRequest { get; set; }
+
     [Range(1, 5)]
     public int Rating { get; set; }
 

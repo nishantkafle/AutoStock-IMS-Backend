@@ -52,8 +52,18 @@ public class InvoiceService(AppDbContext context) : IInvoiceService
         }
 
         invoice.SubTotal = subTotal;
+        
+        // Loyalty Program: 10% discount if subtotal > 5000
+        decimal loyaltyDiscount = 0;
+        if (subTotal > 5000)
+        {
+            loyaltyDiscount = subTotal * 0.10m;
+        }
+
+        var totalRequestedDiscount = dto.DiscountAmount + loyaltyDiscount;
+
         // ensure discount doesn't exceed subtotal
-        var actualDiscount = dto.DiscountAmount > subTotal ? subTotal : dto.DiscountAmount;
+        var actualDiscount = totalRequestedDiscount > subTotal ? subTotal : totalRequestedDiscount;
         invoice.DiscountAmount = actualDiscount;
         invoice.TotalAmount = subTotal - actualDiscount;
         
@@ -73,6 +83,7 @@ public class InvoiceService(AppDbContext context) : IInvoiceService
         var invoices = await context.Invoices
             .Include(i => i.Items)
             .Include(i => i.Settlements)
+            .AsSplitQuery()
             .OrderByDescending(i => i.CreatedAt)
             .ToListAsync();
 
@@ -84,6 +95,7 @@ public class InvoiceService(AppDbContext context) : IInvoiceService
         var invoice = await context.Invoices
             .Include(i => i.Items)
             .Include(i => i.Settlements)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(i => i.Id == id);
 
         return invoice == null ? null : MapToDto(invoice);
@@ -210,7 +222,17 @@ public class InvoiceService(AppDbContext context) : IInvoiceService
         await context.InvoiceItems.AddRangeAsync(newItems);
 
         invoice.SubTotal = subTotal;
-        var actualDiscount = dto.DiscountAmount > subTotal ? subTotal : dto.DiscountAmount;
+        
+        // Loyalty Program: 10% discount if subtotal > 5000
+        decimal loyaltyDiscount = 0;
+        if (subTotal > 5000)
+        {
+            loyaltyDiscount = subTotal * 0.10m;
+        }
+
+        var totalRequestedDiscount = dto.DiscountAmount + loyaltyDiscount;
+
+        var actualDiscount = totalRequestedDiscount > subTotal ? subTotal : totalRequestedDiscount;
         invoice.DiscountAmount = actualDiscount;
         invoice.TotalAmount = subTotal - actualDiscount;
         invoice.PaidAmount = dto.PaidAmount;

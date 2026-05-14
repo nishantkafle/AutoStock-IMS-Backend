@@ -1,4 +1,4 @@
-﻿using AutoStock.Application;
+using AutoStock.Application;
 using AutoStock.Application.DTOs.Reviews;
 using AutoStock.Application.Interfaces.IServices;
 using AutoStock.Domain.Entities;
@@ -18,6 +18,8 @@ public class ReviewService(
         Id = r.Id,
         CustomerId = r.CustomerId,
         CustomerName = r.Customer?.FullName ?? "",
+        PartRequestId = r.PartRequestId,
+        PartName = r.PartRequest?.PartName ?? "",
         Rating = r.Rating,
         Comment = r.Comment,
         CreatedAt = r.CreatedAt
@@ -26,9 +28,28 @@ public class ReviewService(
     public async Task<ApiResponse<ReviewResponseDto>> CreateReviewAsync(
         string customerId, ReviewRequestDto dto)
     {
+        if (dto.PartRequestId.HasValue)
+        {
+            var partRequest = await db.PartRequests
+                .FirstOrDefaultAsync(pr => pr.Id == dto.PartRequestId && pr.CustomerId == customerId);
+
+            if (partRequest == null)
+                return ApiResponse<ReviewResponseDto>.Fail("Part request not found");
+
+            if (!partRequest.IsPaid || partRequest.Status != "Fulfilled")
+                return ApiResponse<ReviewResponseDto>.Fail("You can only review fulfilled and paid part requests");
+
+            var alreadyReviewed = await db.Reviews
+                .AnyAsync(r => r.PartRequestId == dto.PartRequestId && r.CustomerId == customerId);
+
+            if (alreadyReviewed)
+                return ApiResponse<ReviewResponseDto>.Fail("You have already reviewed this part request");
+        }
+
         var review = new Review
         {
             CustomerId = customerId,
+            PartRequestId = dto.PartRequestId,
             Rating = dto.Rating,
             Comment = dto.Comment
         };
@@ -37,16 +58,18 @@ public class ReviewService(
         await db.SaveChangesAsync();
 
         await db.Entry(review).Reference(r => r.Customer).LoadAsync();
+        if (review.PartRequestId.HasValue)
+            await db.Entry(review).Reference(r => r.PartRequest).LoadAsync();
 
         logger.LogInformation("Review submitted by customer {Id} with rating {Rating}", customerId, dto.Rating);
         return ApiResponse<ReviewResponseDto>.Ok(ToDto(review), "Review submitted");
     }
 
-    // All reviews are public - anyone logged in can see them
     public async Task<ApiResponse<List<ReviewResponseDto>>> GetAllReviewsAsync()
     {
         var list = await db.Reviews
             .Include(r => r.Customer)
+            .Include(r => r.PartRequest)
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync();
 
@@ -57,6 +80,7 @@ public class ReviewService(
     {
         var list = await db.Reviews
             .Include(r => r.Customer)
+            .Include(r => r.PartRequest)
             .Where(r => r.CustomerId == customerId)
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync();
@@ -64,7 +88,6 @@ public class ReviewService(
         return ApiResponse<List<ReviewResponseDto>>.Ok(list.Select(ToDto).ToList());
     }
 
-    // Customer can delete their own review
     public async Task<ApiResponse<string>> DeleteReviewAsync(string customerId, Guid reviewId)
     {
         var review = await db.Reviews

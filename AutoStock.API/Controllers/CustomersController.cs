@@ -1,4 +1,4 @@
-﻿using AutoStock.Application.DTOs.Customer;
+using AutoStock.Application.DTOs.Customer;
 using AutoStock.Application.Interfaces.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +7,7 @@ namespace AutoStock.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Staff")]
+[Authorize(Roles = "Admin,Staff")]
 public class CustomersController : ControllerBase
 {
     private readonly ICustomerService _customerService;

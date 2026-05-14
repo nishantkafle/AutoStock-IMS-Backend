@@ -20,6 +20,14 @@ public class VehiclesController(IVehicleService vehicleService) : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("all")]
+    [Authorize(Roles = "Admin,Staff")]
+    public async Task<IActionResult> GetAll()
+    {
+        var result = await vehicleService.GetAllVehiclesAsync();
+        return Ok(result);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Add([FromBody] VehicleRequestDto dto)
     {

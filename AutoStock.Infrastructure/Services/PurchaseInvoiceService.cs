@@ -1,4 +1,4 @@
-﻿using AutoStock.Application;
+using AutoStock.Application;
 using AutoStock.Application.DTOs.PurchaseInvoices;
 using AutoStock.Application.Interfaces.IServices;
 using AutoStock.Domain.Entities;
@@ -101,6 +101,7 @@ public class PurchaseInvoiceService(
                 .Include(i => i.Vendor)
                 .Include(i => i.CreatedByAdmin)
                 .Include(i => i.Items).ThenInclude(item => item.Part)
+                .AsSplitQuery()
                 .FirstAsync(i => i.Id == invoice.Id);
 
             logger.LogInformation("Purchase invoice {InvoiceNumber} created by admin {AdminId}, total Rs.{Total}",
@@ -124,6 +125,7 @@ public class PurchaseInvoiceService(
             .Include(i => i.Vendor)
             .Include(i => i.CreatedByAdmin)
             .Include(i => i.Items).ThenInclude(item => item.Part)
+            .AsSplitQuery()
             .OrderByDescending(i => i.PurchaseDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -138,6 +140,7 @@ public class PurchaseInvoiceService(
             .Include(i => i.Vendor)
             .Include(i => i.CreatedByAdmin)
             .Include(i => i.Items).ThenInclude(item => item.Part)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(i => i.Id == id);
 
         if (invoice == null)

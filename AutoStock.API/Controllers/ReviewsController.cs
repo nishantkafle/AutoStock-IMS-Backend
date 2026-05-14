@@ -1,4 +1,4 @@
-﻿using AutoStock.Application.DTOs.Reviews;
+using AutoStock.Application.DTOs.Reviews;
 using AutoStock.Application.Interfaces.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

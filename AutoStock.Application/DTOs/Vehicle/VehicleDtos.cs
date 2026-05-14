@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace AutoStock.Application.DTOs.Vehicle;
 
@@ -22,6 +22,7 @@ public class VehicleRequestDto
 public class VehicleResponseDto
 {
     public Guid Id { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
     public string Make { get; set; } = string.Empty;
     public string Model { get; set; } = string.Empty;
     public int Year { get; set; }

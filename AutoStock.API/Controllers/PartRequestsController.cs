@@ -1,4 +1,4 @@
-﻿using AutoStock.Application.DTOs.PartRequests;
+using AutoStock.Application.DTOs.PartRequests;
 using AutoStock.Application.Interfaces.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +13,6 @@ public class PartRequestsController(IPartRequestService partRequestService) : Co
 {
     private string GetUserId() => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
-    // POST api/partrequests - customer submits a part request
     [HttpPost]
     [Authorize(Roles = "Customer")]
     public async Task<IActionResult> Create([FromBody] PartRequestCreateDto dto)
@@ -22,7 +21,6 @@ public class PartRequestsController(IPartRequestService partRequestService) : Co
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
-    // GET api/partrequests/mine - customer views their own requests
     [HttpGet("mine")]
     [Authorize(Roles = "Customer")]
     public async Task<IActionResult> GetMine()
@@ -31,7 +29,6 @@ public class PartRequestsController(IPartRequestService partRequestService) : Co
         return Ok(result);
     }
 
-    // DELETE api/partrequests/{id} - customer deletes a pending request
     [HttpDelete("{id}")]
     [Authorize(Roles = "Customer")]
     public async Task<IActionResult> Delete(Guid id)
@@ -40,7 +37,6 @@ public class PartRequestsController(IPartRequestService partRequestService) : Co
         return result.Success ? Ok(result) : NotFound(result);
     }
 
-    // GET api/partrequests - admin and staff see all requests
     [HttpGet]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IActionResult> GetAll()
@@ -49,7 +45,6 @@ public class PartRequestsController(IPartRequestService partRequestService) : Co
         return Ok(result);
     }
 
-    // PUT api/partrequests/{id}/status - admin or staff updates status
     [HttpPut("{id}/status")]
     [Authorize(Roles = "Admin,Staff")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromQuery] string status)
@@ -57,4 +52,13 @@ public class PartRequestsController(IPartRequestService partRequestService) : Co
         var result = await partRequestService.UpdateStatusAsync(id, status);
         return result.Success ? Ok(result) : BadRequest(result);
     }
+
+    [HttpPost("{id}/pay")]
+    [Authorize(Roles = "Customer")]
+    public async Task<IActionResult> Pay(Guid id)
+    {
+        var result = await partRequestService.PayRequestAsync(GetUserId(), id);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
 }
+
