@@ -14,6 +14,7 @@ public class InvoiceService(AppDbContext context) : IInvoiceService
         {
             CustomerName = dto.CustomerName,
             CustomerPhone = dto.CustomerPhone,
+            CustomerEmail = dto.CustomerEmail,
             CustomerAddress = dto.CustomerAddress,
             StaffId = staffId,
             DiscountAmount = dto.DiscountAmount,
@@ -132,6 +133,98 @@ public class InvoiceService(AppDbContext context) : IInvoiceService
         return await GetInvoiceByIdAsync(id) ?? throw new Exception("Error reloading invoice");
     }
 
+    public async Task DeleteInvoiceAsync(Guid id)
+    {
+        var invoice = await context.Invoices.FindAsync(id);
+        if (invoice == null) throw new Exception("Invoice not found");
+
+        context.Invoices.Remove(invoice);
+        await context.SaveChangesAsync();
+    }
+
+    public async Task<InvoiceResponseDto> UpdateInvoiceAsync(Guid id, UpdateInvoiceDto dto)
+    {
+        var invoice = await context.Invoices
+            .Include(i => i.Items)
+            .FirstOrDefaultAsync(i => i.Id == id);
+
+        if (invoice == null) throw new Exception("Invoice not found");
+
+        // 1. Reverse previous stock changes and collect old item IDs
+        var oldItemIds = invoice.Items.Select(i => i.Id).ToList();
+        foreach (var oldItem in invoice.Items)
+        {
+            var part = await context.Parts.FindAsync(oldItem.PartId);
+            if (part != null)
+            {
+                part.StockQty += oldItem.Quantity;
+            }
+        }
+
+        // 2. Delete old items directly using ExecuteDelete to avoid concurrency issues
+        await context.InvoiceItems
+            .Where(i => oldItemIds.Contains(i.Id))
+            .ExecuteDeleteAsync();
+
+        // Detach the old items from the context so the navigation collection is clean
+        foreach (var entry in context.ChangeTracker.Entries<InvoiceItem>().ToList())
+            entry.State = Microsoft.EntityFrameworkCore.EntityState.Detached;
+
+        // Re-fetch invoice without items to get a clean tracked instance
+        invoice = await context.Invoices.FindAsync(id);
+        if (invoice == null) throw new Exception("Invoice not found after item deletion");
+
+        // 3. Update basic info
+        invoice.CustomerName = dto.CustomerName;
+        invoice.CustomerPhone = dto.CustomerPhone;
+        invoice.CustomerEmail = dto.CustomerEmail;
+        invoice.CustomerAddress = dto.CustomerAddress;
+        invoice.PaymentMethod = dto.PaymentMethod;
+
+        // 4. Add new items and deduct stock
+        decimal subTotal = 0;
+        var newItems = new List<InvoiceItem>();
+        foreach (var itemDto in dto.Items)
+        {
+            var part = await context.Parts.FindAsync(itemDto.PartId);
+            if (part == null) throw new Exception($"Part not found: {itemDto.PartId}");
+
+            if (part.StockQty < itemDto.Quantity)
+                throw new Exception($"Not enough stock for part {part.Name}");
+
+            part.StockQty -= itemDto.Quantity;
+            var totalPrice = part.Price * itemDto.Quantity;
+            subTotal += totalPrice;
+
+            newItems.Add(new InvoiceItem
+            {
+                InvoiceId = invoice.Id,
+                PartId = part.Id,
+                PartName = part.Name,
+                Quantity = itemDto.Quantity,
+                UnitPrice = part.Price,
+                TotalPrice = totalPrice
+            });
+        }
+
+        await context.InvoiceItems.AddRangeAsync(newItems);
+
+        invoice.SubTotal = subTotal;
+        var actualDiscount = dto.DiscountAmount > subTotal ? subTotal : dto.DiscountAmount;
+        invoice.DiscountAmount = actualDiscount;
+        invoice.TotalAmount = subTotal - actualDiscount;
+        invoice.PaidAmount = dto.PaidAmount;
+        invoice.RemainingBalance = invoice.TotalAmount - dto.PaidAmount;
+
+        await context.SaveChangesAsync();
+
+        // Return with items included
+        var result = await context.Invoices
+            .Include(i => i.Items)
+            .FirstOrDefaultAsync(i => i.Id == id);
+        return MapToDto(result!);
+    }
+
     private static InvoiceResponseDto MapToDto(Invoice invoice)
     {
         return new InvoiceResponseDto
@@ -139,6 +232,7 @@ public class InvoiceService(AppDbContext context) : IInvoiceService
             Id = invoice.Id,
             CustomerName = invoice.CustomerName,
             CustomerPhone = invoice.CustomerPhone,
+            CustomerEmail = invoice.CustomerEmail,
             CustomerAddress = invoice.CustomerAddress,
             StaffId = invoice.StaffId,
             SubTotal = invoice.SubTotal,

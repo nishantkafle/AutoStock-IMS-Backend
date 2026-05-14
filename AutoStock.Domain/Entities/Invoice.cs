@@ -13,6 +13,7 @@ public class Invoice
     public string CustomerPhone { get; set; } = string.Empty;
 
     public string CustomerAddress { get; set; } = string.Empty;
+    public string CustomerEmail { get; set; } = string.Empty;
 
     // Staff user who created it
     public string StaffId { get; set; } = string.Empty;

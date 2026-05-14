@@ -193,4 +193,50 @@ public class InvoicesController(IInvoiceService invoiceService, IEmailService em
             return BadRequest(new { message = ex.Message });
         }
     }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteInvoice(Guid id)
+    {
+        try
+        {
+            await invoiceService.DeleteInvoiceAsync(id);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateInvoice(Guid id, [FromBody] UpdateInvoiceDto dto)
+    {
+        try
+        {
+            var updated = await invoiceService.UpdateInvoiceAsync(id, dto);
+            return Ok(updated);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("{id}/send-credit-reminder")]
+    public async Task<IActionResult> SendCreditReminder(Guid id)
+    {
+        try
+        {
+            var invoice = await invoiceService.GetInvoiceByIdAsync(id);
+            if (invoice == null) return NotFound();
+            if (string.IsNullOrEmpty(invoice.CustomerEmail)) return BadRequest(new { message = "Customer email is missing." });
+
+            await emailService.SendCreditReminderAsync(invoice.CustomerEmail, invoice.CustomerName, invoice.RemainingBalance);
+            return Ok(new { message = "Credit reminder sent successfully." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 }

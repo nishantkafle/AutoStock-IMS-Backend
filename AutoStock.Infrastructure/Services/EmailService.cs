@@ -143,4 +143,29 @@ public class EmailService(IOptions<EmailSettings> settings) : IEmailService
         await client.SendAsync(message);
         await client.DisconnectAsync(true);
     }
+
+    public async Task SendCreditReminderAsync(string toEmail, string customerName, decimal remainingBalance)
+    {
+        var message = new MimeMessage();
+        message.From.Add(new MailboxAddress(_s.SenderName, _s.SenderEmail));
+        message.To.Add(new MailboxAddress(customerName, toEmail));
+        message.Subject = "Credit Payment Reminder - AutoStock";
+
+        message.Body = new TextPart("html")
+        {
+            Text = $"""
+                <p>Dear {customerName},</p>
+                <p>This is a reminder regarding your outstanding credit balance at AutoStock IMS.</p>
+                <p><b>Your current Credit amount is NPR {remainingBalance:F2}.</b></p>
+                <p>Please pay in time to maintain your credit status.</p>
+                <p>Thank you,<br/>AutoStock IMS</p>
+            """
+        };
+
+        using var client = new SmtpClient();
+        await client.ConnectAsync(_s.SmtpHost, _s.SmtpPort, SecureSocketOptions.StartTls);
+        await client.AuthenticateAsync(_s.BrevoLogin, _s.AppPassword);
+        await client.SendAsync(message);
+        await client.DisconnectAsync(true);
+    }
 }

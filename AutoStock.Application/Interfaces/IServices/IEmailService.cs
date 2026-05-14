@@ -15,4 +15,5 @@ public interface IEmailService
         string role,
         string? extraInfo = null
     );
+    Task SendCreditReminderAsync(string toEmail, string customerName, decimal remainingBalance);
 }

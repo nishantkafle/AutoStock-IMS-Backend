@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -11,6 +11,7 @@ namespace AutoStock.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            /*
             migrationBuilder.CreateTable(
                 name: "PurchaseInvoices",
                 columns: table => new
@@ -86,6 +87,7 @@ namespace AutoStock.Infrastructure.Migrations
                 name: "IX_PurchaseInvoices_VendorId",
                 table: "PurchaseInvoices",
                 column: "VendorId");
+            */
         }
 
         /// <inheritdoc />
