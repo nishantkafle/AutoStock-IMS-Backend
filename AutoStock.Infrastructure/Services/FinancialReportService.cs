@@ -1,4 +1,4 @@
-﻿using AutoStock.Application.DTOs;
+using AutoStock.Application.DTOs;
 using AutoStock.Application.Interfaces;
 using AutoStock.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -23,8 +23,8 @@ public class FinancialReportService : IFinancialReportService
         var dayStart = DateTime.SpecifyKind(date.Date, DateTimeKind.Utc);
         var dayEnd = DateTime.SpecifyKind(dayStart.AddDays(1), DateTimeKind.Utc);
 
-        // Revenue: SaleInvoices created on that day
-        var sales = await _db.SaleInvoices
+        // Revenue: Invoices created on that day
+        var sales = await _db.Invoices
             .Include(i => i.Customer)
             .Include(i => i.Items)
             .Where(i => i.CreatedAt >= dayStart && i.CreatedAt < dayEnd)
@@ -46,10 +46,10 @@ public class FinancialReportService : IFinancialReportService
             SalesCount = sales.Count,
             Sales = sales.Select(s => new SaleSummaryDto
             {
-                InvoiceNumber = s.InvoiceNumber,
-                CustomerName = s.Customer?.FullName ?? "Unknown",
+                InvoiceNumber = s.Id.ToString().Substring(0, 8).ToUpper(),
+                CustomerName = string.IsNullOrEmpty(s.CustomerName) ? (s.Customer?.FullName ?? "Unknown") : s.CustomerName,
                 Amount = s.TotalAmount,
-                Status = s.Status,
+                Status = s.RemainingBalance <= 0 ? "Paid" : "Unpaid",
                 Time = s.CreatedAt,
             }).OrderByDescending(s => s.Time).ToList(),
         };
@@ -62,7 +62,7 @@ public class FinancialReportService : IFinancialReportService
         var monthStart = DateTime.SpecifyKind(new DateTime(year, month, 1), DateTimeKind.Utc);
         var monthEnd = DateTime.SpecifyKind(monthStart.AddMonths(1), DateTimeKind.Utc);
 
-        var sales = await _db.SaleInvoices
+        var sales = await _db.Invoices
             .Where(i => i.CreatedAt >= monthStart && i.CreatedAt < monthEnd)
             .ToListAsync();
 
@@ -102,7 +102,7 @@ public class FinancialReportService : IFinancialReportService
         var yearStart = DateTime.SpecifyKind(new DateTime(year, 1, 1), DateTimeKind.Utc);
         var yearEnd = DateTime.SpecifyKind(yearStart.AddYears(1), DateTimeKind.Utc);
 
-        var sales = await _db.SaleInvoices
+        var sales = await _db.Invoices
             .Where(i => i.CreatedAt >= yearStart && i.CreatedAt < yearEnd)
             .ToListAsync();
 

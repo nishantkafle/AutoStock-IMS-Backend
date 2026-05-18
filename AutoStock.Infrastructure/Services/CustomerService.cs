@@ -1,4 +1,4 @@
-﻿using AutoStock.Application;
+using AutoStock.Application;
 using AutoStock.Application.DTOs.Customer;
 using AutoStock.Application.Interfaces.IServices;
 using AutoStock.Domain.Entities;
@@ -197,14 +197,22 @@ public class CustomerService : ICustomerService
         };
     }
 
-    // Regular customers: registered more than 3 months ago
+    // Regular customers: registered more than 7 days ago or 2+ purchases
     public async Task<ApiResponse<List<CustomerReportDto>>> GetRegularCustomersAsync()
     {
-        var threeMonthsAgo = DateTime.UtcNow.AddMonths(-3);
+        var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
         var customers = await _userManager.GetUsersInRoleAsync("Customer");
+        var invoices = await _db.Invoices.ToListAsync();
+
+        var regularPhones = invoices
+            .Where(i => !string.IsNullOrWhiteSpace(i.CustomerPhone))
+            .GroupBy(i => i.CustomerPhone)
+            .Where(g => g.Count() >= 2)
+            .Select(g => g.Key)
+            .ToList();
 
         var regulars = customers
-            .Where(c => c.CreatedAt <= threeMonthsAgo)
+            .Where(c => c.CreatedAt <= sevenDaysAgo || (!string.IsNullOrWhiteSpace(c.PhoneNumber) && regularPhones.Contains(c.PhoneNumber)))
             .Select(c => new CustomerReportDto
             {
                 Id = c.Id,
@@ -250,16 +258,39 @@ public class CustomerService : ICustomerService
     public async Task<ApiResponse<List<CustomerReportDto>>> GetPendingCreditsAsync()
     {
         var customers = await _userManager.GetUsersInRoleAsync("Customer");
+        var invoices = await _db.Invoices.ToListAsync();
+
+        var creditInvoices = invoices.Where(i => i.PaymentMethod == "Credit" && i.RemainingBalance > 0).ToList();
+
+        var pendingMapById = creditInvoices
+            .Where(i => !string.IsNullOrWhiteSpace(i.CustomerId))
+            .GroupBy(i => i.CustomerId)
+            .ToDictionary(g => g.Key, g => g.Sum(i => i.RemainingBalance));
+
+        var pendingMapByPhone = creditInvoices
+            .Where(i => string.IsNullOrWhiteSpace(i.CustomerId) && !string.IsNullOrWhiteSpace(i.CustomerPhone))
+            .GroupBy(i => i.CustomerPhone)
+            .ToDictionary(g => g.Key, g => g.Sum(i => i.RemainingBalance));
+
+        var pendingMapByName = creditInvoices
+            .Where(i => string.IsNullOrWhiteSpace(i.CustomerId) && string.IsNullOrWhiteSpace(i.CustomerPhone) && !string.IsNullOrWhiteSpace(i.CustomerName))
+            .GroupBy(i => i.CustomerName.ToLower().Trim())
+            .ToDictionary(g => g.Key, g => g.Sum(i => i.RemainingBalance));
 
         var pending = customers
-            .Where(c => c.HasPendingCredit)
+            .Where(c => pendingMapById.ContainsKey(c.Id) || 
+                       (!string.IsNullOrWhiteSpace(c.PhoneNumber) && pendingMapByPhone.ContainsKey(c.PhoneNumber)) || 
+                       (!string.IsNullOrWhiteSpace(c.FullName) && pendingMapByName.ContainsKey(c.FullName.ToLower().Trim())))
             .Select(c => new CustomerReportDto
             {
                 Id = c.Id,
                 FullName = c.FullName,
                 Email = c.Email ?? string.Empty,
                 PhoneNumber = c.PhoneNumber ?? string.Empty,
-                CreatedAt = c.CreatedAt
+                CreatedAt = c.CreatedAt,
+                PendingCredit = pendingMapById.ContainsKey(c.Id) ? pendingMapById[c.Id] : 
+                               (!string.IsNullOrWhiteSpace(c.PhoneNumber) && pendingMapByPhone.ContainsKey(c.PhoneNumber)) ? pendingMapByPhone[c.PhoneNumber] : 
+                               pendingMapByName[c.FullName.ToLower().Trim()]
             }).ToList();
 
         return ApiResponse<List<CustomerReportDto>>.Ok(pending);

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace AutoStock.Application.DTOs.Customer;
 
@@ -61,6 +61,7 @@ public class CustomerReportDto
     public string PhoneNumber { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public decimal TotalSpent { get; set; }
+    public decimal PendingCredit { get; set; }
 }
 
 
