@@ -3,6 +3,7 @@ using System;
 using AutoStock.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AutoStock.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260518082923_AddPartIdAndFieldsToPartRequest")]
+    partial class AddPartIdAndFieldsToPartRequest
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -120,9 +123,6 @@ namespace AutoStock.Infrastructure.Migrations
 
                     b.Property<decimal>("DiscountAmount")
                         .HasColumnType("numeric");
-
-                    b.Property<DateTime?>("LastReminderSent")
-                        .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("PaidAmount")
                         .HasColumnType("numeric");

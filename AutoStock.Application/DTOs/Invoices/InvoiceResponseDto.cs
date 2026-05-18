@@ -34,6 +34,7 @@ public class InvoiceResponseDto
     public string PaymentMethod { get; set; } = string.Empty;
     public decimal PaidAmount { get; set; }
     public decimal RemainingBalance { get; set; }
+    public DateTime? LastReminderSent { get; set; }
     public string? CustomerId { get; set; }
     public List<InvoiceItemResponseDto> Items { get; set; } = new();
     public List<SettlementResponseDto> Settlements { get; set; } = new();

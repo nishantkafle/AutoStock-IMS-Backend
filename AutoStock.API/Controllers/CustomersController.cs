@@ -29,9 +29,9 @@ public class CustomersController : ControllerBase
     //  Staff views all customers
     // GET api/customers
     [HttpGet]
-    public async Task<IActionResult> GetAllCustomers()
+    public async Task<IActionResult> GetAllCustomers([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var result = await _customerService.GetAllCustomersAsync();
+        var result = await _customerService.GetAllCustomersAsync(page, pageSize);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 

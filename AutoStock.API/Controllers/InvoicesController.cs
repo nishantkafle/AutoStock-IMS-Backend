@@ -42,9 +42,9 @@ public class InvoicesController(IInvoiceService invoiceService, IEmailService em
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAllInvoices()
+    public async Task<IActionResult> GetAllInvoices([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? paymentMethod = null)
     {
-        var result = await invoiceService.GetAllInvoicesAsync();
+        var result = await invoiceService.GetAllInvoicesAsync(page, pageSize, paymentMethod);
         return Ok(result);
     }
 
@@ -232,6 +232,7 @@ public class InvoicesController(IInvoiceService invoiceService, IEmailService em
             if (string.IsNullOrEmpty(invoice.CustomerEmail)) return BadRequest(new { message = "Customer email is missing." });
 
             await emailService.SendCreditReminderAsync(invoice.CustomerEmail, invoice.CustomerName, invoice.RemainingBalance);
+            await invoiceService.UpdateLastReminderSentAsync(id, DateTime.UtcNow);
             return Ok(new { message = "Credit reminder sent successfully." });
         }
         catch (Exception ex)

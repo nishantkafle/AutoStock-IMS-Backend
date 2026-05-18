@@ -1,4 +1,4 @@
-﻿using AutoStock.Application.DTOs.Appointments;
+using AutoStock.Application.DTOs.Appointments;
 
 namespace AutoStock.Application.Interfaces.IServices;
 
@@ -14,7 +14,7 @@ public interface IAppointmentService
     Task<ApiResponse<string>> CancelAppointmentAsync(string customerId, Guid appointmentId);
 
     // Admin or staff views all appointments
-    Task<ApiResponse<List<AppointmentResponseDto>>> GetAllAppointmentsAsync();
+    Task<ApiResponse<PagedResult<AppointmentResponseDto>>> GetAllAppointmentsAsync(int page, int pageSize);
 
     // Admin or staff updates appointment status (Confirmed / Completed)
     Task<ApiResponse<AppointmentResponseDto>> UpdateStatusAsync(Guid appointmentId, AppointmentStatusDto dto);

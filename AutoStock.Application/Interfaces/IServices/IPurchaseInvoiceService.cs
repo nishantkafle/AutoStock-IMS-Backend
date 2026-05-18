@@ -1,4 +1,4 @@
-﻿using AutoStock.Application.DTOs.PurchaseInvoices;
+using AutoStock.Application.DTOs.PurchaseInvoices;
 
 namespace AutoStock.Application.Interfaces.IServices;
 
@@ -8,7 +8,7 @@ public interface IPurchaseInvoiceService
     Task<ApiResponse<PurchaseInvoiceResponseDto>> CreateInvoiceAsync(string adminId, PurchaseInvoiceRequestDto dto);
 
     // Admin views all purchase invoices
-    Task<ApiResponse<List<PurchaseInvoiceResponseDto>>> GetAllInvoicesAsync(int page, int pageSize);
+    Task<ApiResponse<PagedResult<PurchaseInvoiceResponseDto>>> GetAllInvoicesAsync(int page, int pageSize);
 
     // Admin views a single invoice with all its items
     Task<ApiResponse<PurchaseInvoiceResponseDto>> GetInvoiceByIdAsync(Guid id);

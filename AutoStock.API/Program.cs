@@ -87,6 +87,9 @@ builder.Services.AddScoped<IFinancialReportService, FinancialReportService>();
 // Memory cache
 builder.Services.AddMemoryCache();
 
+// Hosted background services
+builder.Services.AddHostedService<CreditReminderBackgroundService>();
+
 // Rate limiting - max 30 requests per 60 seconds per IP
 builder.Services.AddRateLimiter(options =>
 {
@@ -101,8 +104,14 @@ builder.Services.AddRateLimiter(options =>
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReact", policy =>
-        policy.WithOrigins("http://localhost:5173",
-        "http://localhost:5174"
+        policy.WithOrigins(
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://localhost:5175",
+            "http://localhost:5176",
+            "http://localhost:5177",
+            "http://localhost:5178",
+            "http://localhost:5179"
         )
               .AllowAnyHeader()
               .AllowAnyMethod());

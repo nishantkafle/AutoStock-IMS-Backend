@@ -6,7 +6,7 @@ public interface IVehicleService
 {
     Task<ApiResponse<List<VehicleResponseDto>>> GetMyVehiclesAsync(string userId);
 
-    Task<ApiResponse<List<VehicleResponseDto>>> GetAllVehiclesAsync();
+    Task<ApiResponse<PagedResult<VehicleResponseDto>>> GetAllVehiclesAsync(int page, int pageSize);
 
     Task<ApiResponse<VehicleResponseDto>> AddVehicleAsync(string userId, VehicleRequestDto dto);
 

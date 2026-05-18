@@ -1,4 +1,4 @@
-﻿using AutoStock.Application.DTOs.Staff;
+using AutoStock.Application.DTOs.Staff;
 using AutoStock.Application.Interfaces.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,9 +12,9 @@ public class StaffController(IStaffService staffService) : ControllerBase
 {
     // GET api/staff - list all staff
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var result = await staffService.GetAllStaffAsync();
+        var result = await staffService.GetAllStaffAsync(page, pageSize);
         return Ok(result);
     }
 

@@ -1,4 +1,4 @@
-﻿using AutoStock.Application;
+using AutoStock.Application;
 using AutoStock.Application.DTOs.Staff;
 using AutoStock.Application.Interfaces.IServices;
 using AutoStock.Domain.Entities;
@@ -24,11 +24,23 @@ public class StaffService(
     };
 
     // Get all users with Staff role
-    public async Task<ApiResponse<List<StaffResponseDto>>> GetAllStaffAsync()
+    public async Task<ApiResponse<PagedResult<StaffResponseDto>>> GetAllStaffAsync(int page, int pageSize)
     {
         var staffUsers = await userManager.GetUsersInRoleAsync("Staff");
-        var result = staffUsers.Select(u => ToDto(u, "Staff")).ToList();
-        return ApiResponse<List<StaffResponseDto>>.Ok(result);
+        
+        page = page < 1 ? 1 : page;
+        pageSize = pageSize < 1 ? 10 : pageSize;
+
+        var totalCount = staffUsers.Count;
+        var pagedItems = staffUsers
+            .OrderByDescending(u => u.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(u => ToDto(u, "Staff"))
+            .ToList();
+
+        var result = new PagedResult<StaffResponseDto>(pagedItems, totalCount, page, pageSize);
+        return ApiResponse<PagedResult<StaffResponseDto>>.Ok(result);
     }
 
     public async Task<ApiResponse<StaffResponseDto>> GetStaffByIdAsync(string id)

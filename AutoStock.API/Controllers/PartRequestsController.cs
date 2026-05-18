@@ -39,9 +39,9 @@ public class PartRequestsController(IPartRequestService partRequestService) : Co
 
     [HttpGet]
     [Authorize(Roles = "Admin,Staff")]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var result = await partRequestService.GetAllRequestsAsync();
+        var result = await partRequestService.GetAllRequestsAsync(page, pageSize);
         return Ok(result);
     }
 

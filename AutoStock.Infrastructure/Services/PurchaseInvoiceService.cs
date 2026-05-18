@@ -3,6 +3,7 @@ using AutoStock.Application.DTOs.PurchaseInvoices;
 using AutoStock.Application.Interfaces.IServices;
 using AutoStock.Domain.Entities;
 using AutoStock.Infrastructure.Persistence;
+using AutoStock.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -119,19 +120,20 @@ public class PurchaseInvoiceService(
     }
 
     // Get all invoices - newest first - with pagination 
-    public async Task<ApiResponse<List<PurchaseInvoiceResponseDto>>> GetAllInvoicesAsync(int page, int pageSize)
+    public async Task<ApiResponse<PagedResult<PurchaseInvoiceResponseDto>>> GetAllInvoicesAsync(int page, int pageSize)
     {
-        var invoices = await db.PurchaseInvoices
+        var query = db.PurchaseInvoices
             .Include(i => i.Vendor)
             .Include(i => i.CreatedByAdmin)
             .Include(i => i.Items).ThenInclude(item => item.Part)
             .AsSplitQuery()
-            .OrderByDescending(i => i.PurchaseDate)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
+            .OrderByDescending(i => i.PurchaseDate);
 
-        return ApiResponse<List<PurchaseInvoiceResponseDto>>.Ok(invoices.Select(ToDto).ToList());
+        var pagedInvoices = await query.ToPagedResultAsync(page, pageSize);
+        var mappedItems = pagedInvoices.Items.Select(ToDto).ToList();
+        var result = new PagedResult<PurchaseInvoiceResponseDto>(mappedItems, pagedInvoices.TotalCount, pagedInvoices.PageNumber, pagedInvoices.PageSize);
+
+        return ApiResponse<PagedResult<PurchaseInvoiceResponseDto>>.Ok(result);
     }
 
     public async Task<ApiResponse<PurchaseInvoiceResponseDto>> GetInvoiceByIdAsync(Guid id)

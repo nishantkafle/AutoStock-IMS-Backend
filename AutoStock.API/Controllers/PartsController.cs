@@ -1,4 +1,4 @@
-﻿using AutoStock.Application.DTOs.Parts;
+using AutoStock.Application.DTOs.Parts;
 using AutoStock.Application.Interfaces.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -54,9 +54,9 @@ public class PartsController(IPartService partService) : ControllerBase
         return result.Success ? Ok(result) : NotFound(result);
     }
 
-    // Admin gets list of low stock parts for dashboard alerts 
+    // Admin and staff get list of low stock parts for dashboard alerts 
     [HttpGet("low-stock")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Staff")]
     public async Task<IActionResult> GetLowStock()
     {
         var result = await partService.GetLowStockPartsAsync();

@@ -3,6 +3,7 @@ using AutoStock.Application.DTOs.Appointments;
 using AutoStock.Application.Interfaces.IServices;
 using AutoStock.Domain.Entities;
 using AutoStock.Infrastructure.Persistence;
+using AutoStock.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -109,15 +110,18 @@ public class AppointmentService(
     }
 
     // Admin and staff see all appointments
-    public async Task<ApiResponse<List<AppointmentResponseDto>>> GetAllAppointmentsAsync()
+    public async Task<ApiResponse<PagedResult<AppointmentResponseDto>>> GetAllAppointmentsAsync(int page, int pageSize)
     {
-        var list = await db.Appointments
+        var query = db.Appointments
             .Include(a => a.Customer)
             .Include(a => a.Vehicle)
-            .OrderByDescending(a => a.AppointmentDate)
-            .ToListAsync();
+            .OrderByDescending(a => a.AppointmentDate);
 
-        return ApiResponse<List<AppointmentResponseDto>>.Ok(list.Select(ToDto).ToList());
+        var pagedAppointments = await query.ToPagedResultAsync(page, pageSize);
+        var mappedItems = pagedAppointments.Items.Select(ToDto).ToList();
+        var result = new PagedResult<AppointmentResponseDto>(mappedItems, pagedAppointments.TotalCount, pagedAppointments.PageNumber, pagedAppointments.PageSize);
+
+        return ApiResponse<PagedResult<AppointmentResponseDto>>.Ok(result);
     }
 
     // Admin or staff confirms / completes an appointment

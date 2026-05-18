@@ -1,11 +1,11 @@
-﻿using AutoStock.Application.DTOs.Parts;
+using AutoStock.Application.DTOs.Parts;
 
 namespace AutoStock.Application.Interfaces.IServices;
 
 public interface IPartService
 {
     // Get all parts with pagination
-    Task<ApiResponse<List<PartResponseDto>>> GetAllPartsAsync(int page, int pageSize);
+    Task<ApiResponse<PagedResult<PartResponseDto>>> GetAllPartsAsync(int page, int pageSize);
 
     // Get one part by id
     Task<ApiResponse<PartResponseDto>> GetPartByIdAsync(Guid id);

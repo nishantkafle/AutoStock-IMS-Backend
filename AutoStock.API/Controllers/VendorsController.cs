@@ -18,43 +18,37 @@ public class VendorsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAllVendors()
+    public async Task<IActionResult> GetAllVendors([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var vendors = await _vendorService.GetAllVendorsAsync();
-        return Ok(vendors);
+        var result = await _vendorService.GetAllVendorsAsync(page, pageSize);
+        return Ok(result);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetVendorById(Guid id)
     {
-        var vendor = await _vendorService.GetVendorByIdAsync(id);
-        if (vendor == null) return NotFound("Vendor not found");
-
-        return Ok(vendor);
+        var result = await _vendorService.GetVendorByIdAsync(id);
+        return result.Success ? Ok(result) : NotFound(result);
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateVendor([FromBody] CreateVendorDto dto)
     {
-        var vendor = await _vendorService.CreateVendorAsync(dto);
-        return CreatedAtAction(nameof(GetVendorById), new { id = vendor.Id }, vendor);
+        var result = await _vendorService.CreateVendorAsync(dto);
+        return result.Success ? Ok(result) : BadRequest(result);
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateVendor(Guid id, [FromBody] UpdateVendorDto dto)
     {
         var result = await _vendorService.UpdateVendorAsync(id, dto);
-        if (!result) return NotFound("Vendor not found");
-
-        return NoContent();
+        return result.Success ? Ok(result) : NotFound(result);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteVendor(Guid id)
     {
         var result = await _vendorService.DeleteVendorAsync(id);
-        if (!result) return NotFound("Vendor not found");
-
-        return NoContent();
+        return result.Success ? Ok(result) : NotFound(result);
     }
 }

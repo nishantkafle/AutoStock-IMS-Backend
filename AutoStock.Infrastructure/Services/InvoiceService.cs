@@ -1,7 +1,9 @@
+using AutoStock.Application;
 using AutoStock.Application.DTOs.Invoices;
 using AutoStock.Application.Interfaces.IServices;
 using AutoStock.Domain.Entities;
 using AutoStock.Infrastructure.Persistence;
+using AutoStock.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace AutoStock.Infrastructure.Services;
@@ -78,16 +80,26 @@ public class InvoiceService(AppDbContext context) : IInvoiceService
         return MapToDto(invoice);
     }
 
-    public async Task<IEnumerable<InvoiceResponseDto>> GetAllInvoicesAsync()
+    public async Task<PagedResult<InvoiceResponseDto>> GetAllInvoicesAsync(int page, int pageSize, string? paymentMethod = null)
     {
-        var invoices = await context.Invoices
+        var query = context.Invoices
             .Include(i => i.Items)
             .Include(i => i.Settlements)
             .AsSplitQuery()
-            .OrderByDescending(i => i.CreatedAt)
-            .ToListAsync();
+            .AsQueryable();
 
-        return invoices.Select(MapToDto);
+        if (!string.IsNullOrEmpty(paymentMethod))
+        {
+            query = query.Where(i => i.PaymentMethod == paymentMethod);
+        }
+
+        query = query.OrderByDescending(i => i.CreatedAt);
+
+        var pagedInvoices = await query.ToPagedResultAsync(page, pageSize);
+        var mappedItems = pagedInvoices.Items.Select(MapToDto).ToList();
+        var result = new PagedResult<InvoiceResponseDto>(mappedItems, pagedInvoices.TotalCount, pagedInvoices.PageNumber, pagedInvoices.PageSize);
+
+        return result;
     }
 
     public async Task<InvoiceResponseDto?> GetInvoiceByIdAsync(Guid id)
@@ -264,6 +276,7 @@ public class InvoiceService(AppDbContext context) : IInvoiceService
             PaymentMethod = invoice.PaymentMethod,
             PaidAmount = invoice.PaidAmount,
             RemainingBalance = invoice.RemainingBalance,
+            LastReminderSent = invoice.LastReminderSent,
             CustomerId = invoice.CustomerId,
             Items = (invoice.Items ?? new List<InvoiceItem>()).Select(i => new InvoiceItemResponseDto
             {
@@ -283,5 +296,15 @@ public class InvoiceService(AppDbContext context) : IInvoiceService
                 StaffId = s.StaffId
             }).OrderBy(s => s.SettlementDate).ToList()
         };
+    }
+
+    public async Task UpdateLastReminderSentAsync(Guid id, DateTime date)
+    {
+        var invoice = await context.Invoices.FindAsync(id);
+        if (invoice != null)
+        {
+            invoice.LastReminderSent = date;
+            await context.SaveChangesAsync();
+        }
     }
 }

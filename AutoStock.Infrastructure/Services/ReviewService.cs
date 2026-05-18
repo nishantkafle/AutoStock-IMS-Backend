@@ -3,6 +3,7 @@ using AutoStock.Application.DTOs.Reviews;
 using AutoStock.Application.Interfaces.IServices;
 using AutoStock.Domain.Entities;
 using AutoStock.Infrastructure.Persistence;
+using AutoStock.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -65,15 +66,18 @@ public class ReviewService(
         return ApiResponse<ReviewResponseDto>.Ok(ToDto(review), "Review submitted");
     }
 
-    public async Task<ApiResponse<List<ReviewResponseDto>>> GetAllReviewsAsync()
+    public async Task<ApiResponse<PagedResult<ReviewResponseDto>>> GetAllReviewsAsync(int page, int pageSize)
     {
-        var list = await db.Reviews
+        var query = db.Reviews
             .Include(r => r.Customer)
             .Include(r => r.PartRequest)
-            .OrderByDescending(r => r.CreatedAt)
-            .ToListAsync();
+            .OrderByDescending(r => r.CreatedAt);
 
-        return ApiResponse<List<ReviewResponseDto>>.Ok(list.Select(ToDto).ToList());
+        var pagedReviews = await query.ToPagedResultAsync(page, pageSize);
+        var mappedItems = pagedReviews.Items.Select(ToDto).ToList();
+        var result = new PagedResult<ReviewResponseDto>(mappedItems, pagedReviews.TotalCount, pagedReviews.PageNumber, pagedReviews.PageSize);
+
+        return ApiResponse<PagedResult<ReviewResponseDto>>.Ok(result);
     }
 
     public async Task<ApiResponse<List<ReviewResponseDto>>> GetMyReviewsAsync(string customerId)

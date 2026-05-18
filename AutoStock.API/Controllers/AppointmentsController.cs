@@ -1,4 +1,4 @@
-﻿using AutoStock.Application.DTOs.Appointments;
+using AutoStock.Application.DTOs.Appointments;
 using AutoStock.Application.Interfaces.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -43,9 +43,9 @@ public class AppointmentsController(IAppointmentService appointmentService) : Co
     // GET api/appointments - admin and staff see all
     [HttpGet]
     [Authorize(Roles = "Admin,Staff")]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var result = await appointmentService.GetAllAppointmentsAsync();
+        var result = await appointmentService.GetAllAppointmentsAsync(page, pageSize);
         return Ok(result);
     }
 

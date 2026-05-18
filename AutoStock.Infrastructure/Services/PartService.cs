@@ -1,8 +1,9 @@
-﻿using AutoStock.Application;
+using AutoStock.Application;
 using AutoStock.Application.DTOs.Parts;
 using AutoStock.Application.Interfaces.IServices;
 using AutoStock.Domain.Entities;
 using AutoStock.Infrastructure.Persistence;
+using AutoStock.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -30,19 +31,18 @@ public class PartService(
     };
 
     // IQueryable filters at DB level not in memory 
-    public async Task<ApiResponse<List<PartResponseDto>>> GetAllPartsAsync(int page, int pageSize)
+    public async Task<ApiResponse<PagedResult<PartResponseDto>>> GetAllPartsAsync(int page, int pageSize)
     {
         IQueryable<Part> query = db.Parts
             .Include(p => p.Vendor)
             .OrderBy(p => p.Name);
 
-        var parts = await query
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
+        var pagedParts = await query.ToPagedResultAsync(page, pageSize);
+        var mappedItems = pagedParts.Items.Select(ToDto).ToList();
+        var result = new PagedResult<PartResponseDto>(mappedItems, pagedParts.TotalCount, pagedParts.PageNumber, pagedParts.PageSize);
 
-        logger.LogInformation("Fetched {Count} parts for page {Page}", parts.Count, page);
-        return ApiResponse<List<PartResponseDto>>.Ok(parts.Select(ToDto).ToList());
+        logger.LogInformation("Fetched {Count} parts for page {Page}", mappedItems.Count, page);
+        return ApiResponse<PagedResult<PartResponseDto>>.Ok(result);
     }
 
     public async Task<ApiResponse<PartResponseDto>> GetPartByIdAsync(Guid id)

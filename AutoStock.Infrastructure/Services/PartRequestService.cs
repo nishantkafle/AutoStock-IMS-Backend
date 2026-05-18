@@ -3,6 +3,7 @@ using AutoStock.Application.DTOs.PartRequests;
 using AutoStock.Application.Interfaces.IServices;
 using AutoStock.Domain.Entities;
 using AutoStock.Infrastructure.Persistence;
+using AutoStock.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -89,15 +90,18 @@ public class PartRequestService(
         return ApiResponse<string>.Ok("Request deleted");
     }
 
-    public async Task<ApiResponse<List<PartRequestResponseDto>>> GetAllRequestsAsync()
+    public async Task<ApiResponse<PagedResult<PartRequestResponseDto>>> GetAllRequestsAsync(int page, int pageSize)
     {
-        var list = await db.PartRequests
+        var query = db.PartRequests
             .Include(r => r.Customer)
             .Include(r => r.Part)
-            .OrderByDescending(r => r.RequestedAt)
-            .ToListAsync();
+            .OrderByDescending(r => r.RequestedAt);
 
-        return ApiResponse<List<PartRequestResponseDto>>.Ok(list.Select(ToDto).ToList());
+        var pagedRequests = await query.ToPagedResultAsync(page, pageSize);
+        var mappedItems = pagedRequests.Items.Select(ToDto).ToList();
+        var result = new PagedResult<PartRequestResponseDto>(mappedItems, pagedRequests.TotalCount, pagedRequests.PageNumber, pagedRequests.PageSize);
+
+        return ApiResponse<PagedResult<PartRequestResponseDto>>.Ok(result);
     }
 
     public async Task<ApiResponse<PartRequestResponseDto>> UpdateStatusAsync(Guid requestId, string status)

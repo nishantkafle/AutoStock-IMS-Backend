@@ -22,9 +22,9 @@ public class VehiclesController(IVehicleService vehicleService) : ControllerBase
 
     [HttpGet("all")]
     [Authorize(Roles = "Admin,Staff")]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var result = await vehicleService.GetAllVehiclesAsync();
+        var result = await vehicleService.GetAllVehiclesAsync(page, pageSize);
         return Ok(result);
     }
 

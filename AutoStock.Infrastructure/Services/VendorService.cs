@@ -1,7 +1,9 @@
+using AutoStock.Application;
 using AutoStock.Application.DTOs.Vendors;
 using AutoStock.Application.Interfaces.IServices;
 using AutoStock.Domain.Entities;
 using AutoStock.Infrastructure.Persistence;
+using AutoStock.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 
 namespace AutoStock.Infrastructure.Services;
@@ -15,19 +17,27 @@ public class VendorService : IVendorService
         _context = context;
     }
 
-    public async Task<IEnumerable<VendorDto>> GetAllVendorsAsync()
+    public async Task<ApiResponse<PagedResult<VendorDto>>> GetAllVendorsAsync(int page, int pageSize)
     {
-        var vendors = await _context.Vendors.ToListAsync();
-        return vendors.Select(MapToDto);
+        var query = _context.Vendors.OrderBy(v => v.Name);
+
+        var pagedVendors = await query.ToPagedResultAsync(page, pageSize);
+        var mappedItems = pagedVendors.Items.Select(MapToDto).ToList();
+        var result = new PagedResult<VendorDto>(mappedItems, pagedVendors.TotalCount, pagedVendors.PageNumber, pagedVendors.PageSize);
+
+        return ApiResponse<PagedResult<VendorDto>>.Ok(result);
     }
 
-    public async Task<VendorDto?> GetVendorByIdAsync(Guid id)
+    public async Task<ApiResponse<VendorDto>> GetVendorByIdAsync(Guid id)
     {
         var vendor = await _context.Vendors.FindAsync(id);
-        return vendor == null ? null : MapToDto(vendor);
+        if (vendor == null)
+            return ApiResponse<VendorDto>.Fail("Vendor not found");
+        
+        return ApiResponse<VendorDto>.Ok(MapToDto(vendor));
     }
 
-    public async Task<VendorDto> CreateVendorAsync(CreateVendorDto dto)
+    public async Task<ApiResponse<VendorDto>> CreateVendorAsync(CreateVendorDto dto)
     {
         var vendor = new Vendor
         {
@@ -43,13 +53,14 @@ public class VendorService : IVendorService
         _context.Vendors.Add(vendor);
         await _context.SaveChangesAsync();
 
-        return MapToDto(vendor);
+        return ApiResponse<VendorDto>.Ok(MapToDto(vendor), "Vendor created successfully");
     }
 
-    public async Task<bool> UpdateVendorAsync(Guid id, UpdateVendorDto dto)
+    public async Task<ApiResponse<bool>> UpdateVendorAsync(Guid id, UpdateVendorDto dto)
     {
         var vendor = await _context.Vendors.FindAsync(id);
-        if (vendor == null) return false;
+        if (vendor == null) 
+            return ApiResponse<bool>.Fail("Vendor not found");
 
         vendor.Name = dto.Name;
         vendor.ContactPerson = dto.ContactPerson ?? string.Empty;
@@ -59,17 +70,18 @@ public class VendorService : IVendorService
         vendor.IsActive = dto.IsActive;
 
         await _context.SaveChangesAsync();
-        return true;
+        return ApiResponse<bool>.Ok(true, "Vendor updated successfully");
     }
 
-    public async Task<bool> DeleteVendorAsync(Guid id)
+    public async Task<ApiResponse<bool>> DeleteVendorAsync(Guid id)
     {
         var vendor = await _context.Vendors.FindAsync(id);
-        if (vendor == null) return false;
+        if (vendor == null) 
+            return ApiResponse<bool>.Fail("Vendor not found");
 
         _context.Vendors.Remove(vendor);
         await _context.SaveChangesAsync();
-        return true;
+        return ApiResponse<bool>.Ok(true, "Vendor deleted successfully");
     }
 
     private static VendorDto MapToDto(Vendor vendor)

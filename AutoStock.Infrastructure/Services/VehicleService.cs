@@ -3,6 +3,7 @@ using AutoStock.Application.DTOs.Vehicle;
 using AutoStock.Application.Interfaces.IServices;
 using AutoStock.Domain.Entities;
 using AutoStock.Infrastructure.Persistence;
+using AutoStock.Infrastructure.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -37,15 +38,18 @@ public class VehicleService(
         return ApiResponse<List<VehicleResponseDto>>.Ok(vehicles.Select(ToDto).ToList());
     }
 
-    public async Task<ApiResponse<List<VehicleResponseDto>>> GetAllVehiclesAsync()
+    public async Task<ApiResponse<PagedResult<VehicleResponseDto>>> GetAllVehiclesAsync(int page, int pageSize)
     {
-        var vehicles = await db.Vehicles
+        var query = db.Vehicles
             .Include(v => v.Customer)
             .OrderBy(v => v.Customer!.FullName)
-            .ThenBy(v => v.Make)
-            .ToListAsync();
+            .ThenBy(v => v.Make);
 
-        return ApiResponse<List<VehicleResponseDto>>.Ok(vehicles.Select(ToDto).ToList());
+        var pagedVehicles = await query.ToPagedResultAsync(page, pageSize);
+        var mappedItems = pagedVehicles.Items.Select(ToDto).ToList();
+        var result = new PagedResult<VehicleResponseDto>(mappedItems, pagedVehicles.TotalCount, pagedVehicles.PageNumber, pagedVehicles.PageSize);
+
+        return ApiResponse<PagedResult<VehicleResponseDto>>.Ok(result);
     }
 
     public async Task<ApiResponse<VehicleResponseDto>> AddVehicleAsync(string userId, VehicleRequestDto dto)

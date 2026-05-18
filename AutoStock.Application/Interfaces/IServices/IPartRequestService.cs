@@ -10,7 +10,7 @@ public interface IPartRequestService
 
     Task<ApiResponse<string>> DeleteRequestAsync(string customerId, Guid requestId);
 
-    Task<ApiResponse<List<PartRequestResponseDto>>> GetAllRequestsAsync();
+    Task<ApiResponse<PagedResult<PartRequestResponseDto>>> GetAllRequestsAsync(int page, int pageSize);
 
     Task<ApiResponse<PartRequestResponseDto>> UpdateStatusAsync(Guid requestId, string status);
 

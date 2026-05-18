@@ -24,9 +24,9 @@ public class ReviewsController(IReviewService reviewService) : ControllerBase
 
     // GET api/reviews - all logged-in users can see all reviews
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var result = await reviewService.GetAllReviewsAsync();
+        var result = await reviewService.GetAllReviewsAsync(page, pageSize);
         return Ok(result);
     }
 

@@ -36,6 +36,7 @@ public class Invoice
     // Partial Payment fields
     public decimal PaidAmount { get; set; }
     public decimal RemainingBalance { get; set; }
+    public DateTime? LastReminderSent { get; set; }
 
     // Link to registered customer if applicable
     public string? CustomerId { get; set; }

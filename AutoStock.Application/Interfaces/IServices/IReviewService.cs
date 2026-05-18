@@ -8,7 +8,7 @@ public interface IReviewService
     Task<ApiResponse<ReviewResponseDto>> CreateReviewAsync(string customerId, ReviewRequestDto dto);
 
     // Anyone can view all reviews (public facing)
-    Task<ApiResponse<List<ReviewResponseDto>>> GetAllReviewsAsync();
+    Task<ApiResponse<PagedResult<ReviewResponseDto>>> GetAllReviewsAsync(int page, int pageSize);
 
     // Customer views their own reviews
     Task<ApiResponse<List<ReviewResponseDto>>> GetMyReviewsAsync(string customerId);

@@ -1,11 +1,11 @@
-﻿using AutoStock.Application.DTOs.Staff;
+using AutoStock.Application.DTOs.Staff;
 
 namespace AutoStock.Application.Interfaces.IServices;
 
 public interface IStaffService
 {
     // List all staff members
-    Task<ApiResponse<List<StaffResponseDto>>> GetAllStaffAsync();
+    Task<ApiResponse<PagedResult<StaffResponseDto>>> GetAllStaffAsync(int page, int pageSize);
 
     // Get one staff member by id
     Task<ApiResponse<StaffResponseDto>> GetStaffByIdAsync(string id);

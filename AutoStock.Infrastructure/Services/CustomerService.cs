@@ -3,6 +3,7 @@ using AutoStock.Application.DTOs.Customer;
 using AutoStock.Application.Interfaces.IServices;
 using AutoStock.Domain.Entities;
 using AutoStock.Infrastructure.Persistence;
+using AutoStock.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -118,20 +119,35 @@ public class CustomerService : ICustomerService
     }
 
     // Feature 8: Staff views all customers
-    public async Task<ApiResponse<List<CustomerResponseDto>>> GetAllCustomersAsync()
+    public async Task<ApiResponse<PagedResult<CustomerResponseDto>>> GetAllCustomersAsync(int page, int pageSize)
     {
-        var customers = await _userManager.GetUsersInRoleAsync("Customer");
-        var result = new List<CustomerResponseDto>();
+        var role = await _db.Roles.FirstOrDefaultAsync(r => r.Name == "Customer");
+        if (role == null)
+            return ApiResponse<PagedResult<CustomerResponseDto>>.Ok(new PagedResult<CustomerResponseDto>());
 
-        foreach (var customer in customers)
+        var customerIdsQuery = _db.UserRoles
+            .Where(ur => ur.RoleId == role.Id)
+            .Select(ur => ur.UserId);
+
+        var query = _userManager.Users
+            .Where(u => customerIdsQuery.Contains(u.Id))
+            .OrderByDescending(u => u.CreatedAt);
+
+        var pagedUsers = await query.ToPagedResultAsync(page, pageSize);
+        var userIds = pagedUsers.Items.Select(u => u.Id).ToList();
+
+        var allVehicles = await _db.Vehicles
+            .Where(v => userIds.Contains(v.CustomerId))
+            .ToListAsync();
+
+        var resultList = pagedUsers.Items.Select(user =>
         {
-            var vehicles = await _db.Vehicles
-                .Where(v => v.CustomerId == customer.Id)
-                .ToListAsync();
-            result.Add(MapToResponseDto(customer, vehicles));
-        }
+            var vehicles = allVehicles.Where(v => v.CustomerId == user.Id).ToList();
+            return MapToResponseDto(user, vehicles);
+        }).ToList();
 
-        return ApiResponse<List<CustomerResponseDto>>.Ok(result);
+        var result = new PagedResult<CustomerResponseDto>(resultList, pagedUsers.TotalCount, pagedUsers.PageNumber, pagedUsers.PageSize);
+        return ApiResponse<PagedResult<CustomerResponseDto>>.Ok(result);
     }
 
     // Staff searches customers by name, phone, ID, or vehicle number
