@@ -1,4 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using AutoStock.Application.DTOs.Auth;
@@ -14,6 +14,7 @@ namespace AutoStock.Application.Services;
 public class AuthService(
     UserManager<User> userManager,
     IConfiguration config,
+    IEmailService emailService,
     ILogger<AuthService> logger
 ) : IAuthService
 {
@@ -38,8 +39,21 @@ public class AuthService(
             return ApiResponse<string>.Fail(string.Join(", ", result.Errors.Select(e => e.Description)));
 
         await userManager.AddToRoleAsync(user, "Customer");
+
+        try
+        {
+            var otp = new Random().Next(100000, 999999).ToString();
+            OtpStore.Save(dto.Email, otp);
+            await emailService.SendOtpAsync(dto.Email, otp);
+            logger.LogInformation("Sent verification OTP to {Email}", dto.Email);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to send verification OTP to {Email}", dto.Email);
+        }
+
         logger.LogInformation("{Email} registered as Customer", dto.Email);
-        return ApiResponse<string>.Ok("Registration successful. You can now log in.");
+        return ApiResponse<string>.Ok("Registration successful. Please verify your email with the code sent.");
     }
 
     // Admin creates staff accounts, staff cannot self-register
@@ -74,6 +88,12 @@ public class AuthService(
         {
             logger.LogWarning("Login failed for {Email}", dto.Email);
             return ApiResponse<LoginResponseDto>.Fail("Invalid email or password");
+        }
+
+        if (!user.EmailConfirmed)
+        {
+            logger.LogWarning("Login failed for {Email} - email not confirmed", dto.Email);
+            return ApiResponse<LoginResponseDto>.Fail("Please verify your email first.");
         }
 
         var passwordValid = await userManager.CheckPasswordAsync(user, dto.Password);
@@ -117,5 +137,39 @@ public class AuthService(
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    public async Task<ApiResponse<string>> VerifyOtpAsync(VerifyOtpDto dto)
+    {
+        var user = await userManager.FindByEmailAsync(dto.Email);
+        if (user == null)
+        {
+            logger.LogWarning("Verification failed - email {Email} not found", dto.Email);
+            return ApiResponse<string>.Fail("User not found");
+        }
+
+        if (user.EmailConfirmed)
+        {
+            return ApiResponse<string>.Ok("Email is already verified");
+        }
+
+        var isValid = OtpStore.Verify(dto.Email, dto.Otp);
+        if (!isValid)
+        {
+            logger.LogWarning("Verification failed for {Email} - invalid or expired OTP {Otp}", dto.Email, dto.Otp);
+            return ApiResponse<string>.Fail("Invalid or expired verification code");
+        }
+
+        user.EmailConfirmed = true;
+        var result = await userManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            logger.LogError("Failed to update user {Email} after OTP verification", dto.Email);
+            return ApiResponse<string>.Fail("Failed to update user verification status");
+        }
+
+        OtpStore.Remove(dto.Email);
+        logger.LogInformation("Email verified successfully for {Email}", dto.Email);
+        return ApiResponse<string>.Ok("Email verified successfully");
     }
 }

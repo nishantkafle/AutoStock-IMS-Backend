@@ -1,4 +1,4 @@
-﻿using AutoStock.Application.DTOs.Auth;
+using AutoStock.Application.DTOs.Auth;
 using AutoStock.Application.Interfaces.IServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,6 +14,13 @@ public class AuthController(IAuthService authService) : ControllerBase
     public async Task<IActionResult> Register([FromBody] RegisterDto dto)
     {
         var result = await authService.RegisterCustomerAsync(dto);
+        return result.Success ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpPost("verify-otp")]
+    public async Task<IActionResult> VerifyOtp([FromBody] VerifyOtpDto dto)
+    {
+        var result = await authService.VerifyOtpAsync(dto);
         return result.Success ? Ok(result) : BadRequest(result);
     }
 
